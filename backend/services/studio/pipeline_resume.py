@@ -363,10 +363,17 @@ def clear_pipeline_cache(metadata_dir: Path, *, raw_dir: Path | None = None) -> 
         stamp_path = metadata_dir / STAMP_NAME
         if stamp_path.is_file():
             stamp_path.unlink()
-    if raw_dir is not None and srt_origin == 'asr':
-        srt = Path(raw_dir) / 'input.srt'
-        if srt.is_file():
-            srt.unlink()
+    if srt_origin == 'asr':
+        for target in (metadata_dir / 'input.srt', metadata_dir / 'input.words.json'):
+            if target.is_file():
+                target.unlink()
+        if raw_dir is not None:
+            srt = Path(raw_dir) / 'input.srt'
+            if srt.is_file():
+                srt.unlink()
+            words = Path(raw_dir) / 'input.words.json'
+            if words.is_file():
+                words.unlink()
 
 
 def resume_point_for_project(project_id: str) -> dict[str, Any] | None:

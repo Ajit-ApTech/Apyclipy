@@ -434,14 +434,14 @@ def clear_progress(project_id: str):
         logger.error(f"清除进度数据失败: {e}")
 
 
-# 阶段名称映射（用于显示）
+# Stage name mapping (for display)
 STAGE_NAMES = {
-    "INGEST": "素材准备",
-    "SUBTITLE": "字幕处理", 
-    "ANALYZE": "内容分析",
-    "HIGHLIGHT": "片段定位",
-    "EXPORT": "视频导出",
-    "DONE": "处理完成"
+    "INGEST": "Media Preparation",
+    "SUBTITLE": "Subtitle Processing", 
+    "ANALYZE": "Content Analysis",
+    "HIGHLIGHT": "Highlight Identification",
+    "EXPORT": "Video Export",
+    "DONE": "Processing Complete"
 }
 
 def get_stage_display_name(stage: str) -> str:

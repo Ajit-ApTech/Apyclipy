@@ -801,7 +801,13 @@ class SpeechRecognizer:
 
             def transcribe_with_vad_fallback(model):
                 try:
-                    return transcribe(model, vad_filter=True)
+                    segments, info = transcribe(model, vad_filter=True)
+                    total_audio = _positive_duration(getattr(info, "duration", None)) or 0
+                    total_speech = sum((s.get("end", 0) - s.get("start", 0)) for s in segments) if segments else 0
+                    if total_audio > 25 and total_speech < 15:
+                        logger.info("VAD filter captured only %.1fs out of %.1fs; retrying with vad_filter=False", total_speech, total_audio)
+                        return transcribe(model, vad_filter=False)
+                    return segments, info
                 except Exception as exc:  # noqa: BLE001
                     if not vad_backend_failed(exc):
                         raise

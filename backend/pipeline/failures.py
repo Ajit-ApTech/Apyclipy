@@ -96,8 +96,8 @@ HINT_CHECK_FFMPEG = "确认 ffmpeg 可用（桌面版内置；Docker / 脚本模
 # The extractor itself distinguishes request, response and duration failures.
 CODE_TIMELINE_EMPTY = "timeline_empty"
 HINT_EMPTY_TIMELINE = (
-    "短视频里的片段常被最短时长滤掉（短片约 20 秒起），或模型给出的时间戳对不上字幕。"
-    "换一条更长、口播更完整的素材后再试。"
+    "Short segments are often filtered out by the minimum duration threshold (approx 20s), or timestamps do not align with subtitles. "
+    "Try using material with more continuous speech or voiceover."
 )
 
 
@@ -105,7 +105,7 @@ def empty_timeline_failure(topic_count: int) -> PipelineFailure:
     """旧调用方只返回空列表时的兜底。正常 Step 2 使用本轮报告分类。"""
     return PipelineFailure(
         "ANALYZE",
-        f"时间线提取为空：{topic_count} 个话题在对齐并按时长筛选后没有留下可用片段。",
+        f"Timeline extraction was empty: {topic_count} topic(s) had no valid clips remaining after duration filtering.",
         HINT_EMPTY_TIMELINE,
         code=CODE_TIMELINE_EMPTY,
     )
@@ -147,8 +147,8 @@ def timeline_failure_from_report(topic_count: int, report: dict) -> PipelineFail
         if minimum is not None:
             return PipelineFailure(
                 "ANALYZE",
-                f"时间线提取为空：{report['parsed']} 个有效候选在字幕边界校正后均未达到最短时长（{minimum:g} 秒）。",
-                "相邻片段合并和补足后仍不够长。请使用口播连续、可形成完整话题的素材；降低评分阈值不会改变时长限制。",
+                f"Timeline extraction was empty: {report['parsed']} valid candidate(s) did not reach the minimum duration ({minimum:g}s) after subtitle boundary alignment.",
+                "Adjacent clips remained shorter than the minimum duration. Please use footage or audio with continuous speech that forms complete topics; lowering the scoring threshold will not change duration limits.",
                 code=CODE_TIMELINE_EMPTY,
             )
         return empty_timeline_failure(topic_count)
@@ -160,39 +160,39 @@ def timeline_failure_from_report(topic_count: int, report: dict) -> PipelineFail
         code = last["error_code"]
         kind = last.get("upstream_error_type") or ""
         hints = {
-            "authentication": "请检查「设置 → 服务商与模型」中的密钥、模型权限和提供商配置，再测试连接。",
-            "rate_limited": MODEL_CALL_MESSAGES["rate_limited"],
-            "timeout": MODEL_CALL_MESSAGES["timeout"],
-            "connection": MODEL_CALL_MESSAGES["connection"],
-            "provider_error": "提供商未完成时间线请求，请检查模型可用性和接口兼容性后重试。",
+            "authentication": "Please check your API key, model permissions, and provider configuration in Settings → Providers & Models, then test connection.",
+            "rate_limited": MODEL_CALL_MESSAGES.get("rate_limited", "Rate limited by provider."),
+            "timeout": MODEL_CALL_MESSAGES.get("timeout", "Model request timed out."),
+            "connection": MODEL_CALL_MESSAGES.get("connection", "Connection failed."),
+            "provider_error": "Provider failed to complete the timeline request. Please check model availability and try again.",
         }
         classified = hint_key_for(kind) if kind else hints.get(code, hints["provider_error"])
         return PipelineFailure(
-            "ANALYZE", f"时间线模型调用失败：{len(failed_calls)}/{len(chunks)} 个字幕块调用失败，本次没有可用候选。",
-            classified + "大纲成功或测试连接成功，不能保证后续长文本请求也成功。", code=code,
+            "ANALYZE", f"Timeline model request failed: {len(failed_calls)}/{len(chunks)} subtitle chunk(s) failed. No candidates available for this run.",
+            classified + " A successful test connection or outline does not guarantee that subsequent long-context requests will succeed.", code=code,
             http_status=last.get("http_status"), upstream_error_type=kind,
         )
     if chunks and all(chunk.get("outcome") == "missing_subtitles" for chunk in chunks):
-        return PipelineFailure("ANALYZE", "时间线所需的字幕分块无法读取。",
-                               "请重新导入原视频及配套 SRT；保留原项目以便排查。", code="missing_resource")
+        return PipelineFailure("ANALYZE", "Subtitle chunks required for timeline analysis could not be read.",
+                               "Please re-import the video with an SRT subtitle file.", code="missing_resource")
     if any(chunk.get("outcome") == "chunk_error" for chunk in chunks):
-        return PipelineFailure("ANALYZE", "时间线分块处理失败，本次没有可用候选。",
-                               "请确认项目数据目录可读写并保留失败阶段反馈；这不是评分阈值问题。", code="unexpected")
+        return PipelineFailure("ANALYZE", "Timeline chunk processing failed, no valid candidates available.",
+                               "Please check that project directories are writable.", code="unexpected")
     if chunks:
         rejected = {}
         for chunk in chunks:
             for reason, count in chunk.get("rejected", {}).items():
                 rejected[reason] = rejected.get(reason, 0) + count
         invalid_ranges = rejected.get("invalid_time", 0) + rejected.get("outside_chunk_or_reversed", 0)
-        detail = (f"其中 {invalid_ranges} 个候选的时间戳无效、倒序或不在当前字幕块内。" if invalid_ranges else "")
+        detail = (f" {invalid_ranges} candidate(s) had invalid timestamps or were outside the subtitle chunk." if invalid_ranges else "")
         from backend.core.weak_local_timeline import WEAK_LOCAL_TIMELINE_REASON, empty_interval_hint
 
         cached = any(isinstance(chunk, dict) and chunk.get("source") == "cache" for chunk in chunks)
         if report.get("weak_local_timeline") and not cached:
             return PipelineFailure("ANALYZE", WEAK_LOCAL_TIMELINE_REASON, "", code="invalid_response")
         return PipelineFailure(
-            "ANALYZE", f"时间线模型回复没有有效时间区间（{topic_count} 个话题，{len(chunks)} 个字幕块）。{detail}",
-            empty_interval_hint(report, chunks) + "这一步尚未进入评分或最短时长筛选。", code="invalid_response",
+            "ANALYZE", f"Timeline model returned no valid time intervals ({topic_count} topics, {len(chunks)} subtitle chunks).{detail}",
+            empty_interval_hint(report, chunks) + " This step has not entered scoring or duration filtering yet.", code="invalid_response",
         )
     return empty_timeline_failure(topic_count)
 
@@ -206,14 +206,7 @@ class AttributedPipelineFailure(AttributedError, PipelineFailure):
 
 def cloud_transcription_failure(message, error: BaseException | None = None, http_status: int | None = None,
                                 upstream_error_type: str = "") -> PipelineFailure:
-    """CloudTranscriptionError carries only our safe public text, never a provider body.
-
-    the transcription boundary already built the snapshot (``error.attribution``); it is carried
-    here as is and wins over this wrapper's code (which only picks the user hint), never re-judged.
-    the code is the one the boundary froze (timeout / connection / llm_auth_invalid /...),
-    else ``provider_error``. The fine user cause (``invalid_key`` / ``insufficient_quota``) stays on
-    ``upstream_error_type``. The user text depends ONLY on the code and the frozen HTTP status.
-    A non-str ``message`` is the safe error itself (callers pass the exception)."""
+    """CloudTranscriptionError carries only our safe public text, never a provider body."""
     from backend.core.failure_attribution import attributed, frozen_error_code
     if not isinstance(message, str):
         error = error or message
@@ -225,8 +218,8 @@ def cloud_transcription_failure(message, error: BaseException | None = None, htt
         upstream_error_type = ""
     code = frozen_error_code(error) or "provider_error"
     failure = AttributedPipelineFailure(
-        "SUBTITLE", f"云端转写失败：{message}",
-        "到「设置 → 默认模型 → 语音转字幕」检查所选云端转写的服务、密钥和模型；确认服务可用后重试，或导入 .srt 字幕。",
+        "SUBTITLE", f"Cloud transcription failed: {message}",
+        "Go to Settings → Default Models → Voice to Subtitles to check your cloud transcription provider, API key, and model, or import an SRT subtitle file.",
         code=code, http_status=http_status if isinstance(http_status, int) else None,
         upstream_error_type=upstream_error_type,
     )
@@ -240,42 +233,42 @@ def transcription_not_ready_failure(check: dict, stage: str = "SUBTITLE") -> Pip
     if code in {"whisper_install_failed", "whisper_model_failed"}:
         return PipelineFailure(
             stage,
-            "没有字幕可分析：视频不带字幕，且 Whisper 上次安装没有成功。",
-            "到「设置 → 默认模型 → 语音转字幕」重试安装，或重新导入时带上 .srt 字幕。",
+            "No subtitles available for analysis: Video has no subtitles and previous Whisper installation was unsuccessful.",
+            "Go to Settings → Default Models → Voice to Subtitles to retry installation, or attach an .srt subtitle file.",
             code="whisper_install_failed",
         )
     if code == "sensevoice_not_ready":
         return PipelineFailure(
             stage,
-            "没有字幕可分析：SenseVoice 本次没有生成可用字幕。",
-            "到「设置 → 默认模型 → 语音转字幕」检查 SenseVoiceSmall 是否就绪，或导入 .srt 字幕后重试。",
+            "No subtitles available for analysis: SenseVoice produced no usable subtitles.",
+            "Go to Settings → Default Models → Voice to Subtitles to check SenseVoice status, or attach an .srt subtitle file.",
             code="subtitle_setup",
         )
     if code == "cloud_not_configured":
         return PipelineFailure(
             stage,
-            "云端转写失败：本次未获得可用转写结果。",
-            "到「设置 → 默认模型 → 语音转字幕」检查所选云端转写的服务、密钥和模型；确认服务可用后重试，或导入 .srt 字幕。",
+            "Cloud transcription failed: No usable transcription result obtained.",
+            "Go to Settings → Default Models → Voice to Subtitles to check settings, or attach an .srt subtitle file.",
             code="provider_error",
         )
     return PipelineFailure(
         stage,
-        "没有字幕可分析：视频不带字幕，且本地 Whisper 还没安装。",
-        "到「设置 → 默认模型 → 语音转字幕」安装 Whisper 并下载一个模型，或重新导入时带上 .srt 字幕。",
+        "No subtitles available for analysis: Video has no subtitles and local Whisper is not installed.",
+        "Go to Settings → Default Models → Voice to Subtitles to install Whisper, or attach an .srt subtitle file.",
         code="whisper_not_installed",
     )
 
 
 def missing_subtitle_failure() -> PipelineFailure:
-    """视频没有字幕，自动转写也没留下 srt。按所选转写服务区分下一步。"""
+    """Video has no subtitles and auto-transcription left no SRT."""
     from backend.services import whisper_runtime
     from backend.services.ai_model_settings import load
     settings = load()
     if settings and settings.transcription and settings.transcription.provider == 'cloud':
-        return cloud_transcription_failure("本次未获得可用转写结果。")
+        return cloud_transcription_failure("No usable transcription result obtained.")
     if settings and settings.transcription and settings.transcription.provider == 'sensevoice_local':
-        return PipelineFailure('SUBTITLE', '没有字幕可分析：SenseVoice 本次没有生成可用字幕。',
-                               '到「设置 → 默认模型 → 语音转字幕」检查 SenseVoiceSmall 是否就绪，或导入 .srt 字幕后重试。',
+        return PipelineFailure('SUBTITLE', 'No subtitles available for analysis: SenseVoice produced no usable subtitles.',
+                               'Go to Settings → Default Models → Voice to Subtitles to check SenseVoice, or attach an .srt subtitle file.',
                                code='subtitle_setup')
 
     status = whisper_runtime.get_status()
@@ -283,59 +276,57 @@ def missing_subtitle_failure() -> PipelineFailure:
     if state == "error":
         return PipelineFailure(
             "SUBTITLE",
-            "没有字幕可分析：视频不带字幕，且 Whisper 上次安装没有成功。",
-            "到「设置 → 默认模型 → 语音转字幕」重试安装，或重新导入时带上 .srt 字幕。",
+            "No subtitles available for analysis: Video has no subtitles and previous Whisper installation was unsuccessful.",
+            "Go to Settings → Default Models → Voice to Subtitles to retry installation, or attach an .srt subtitle file.",
             code="whisper_install_failed",
         )
     if state != "installed":
         return PipelineFailure(
             "SUBTITLE",
-            "没有字幕可分析：视频不带字幕，且本地 Whisper 还没安装。",
-            "到「设置 → 默认模型 → 语音转字幕」安装 Whisper 并下载一个模型，或重新导入时带上 .srt 字幕。",
+            "No subtitles available for analysis: Video has no subtitles and local Whisper is not installed.",
+            "Go to Settings → Default Models → Voice to Subtitles to install Whisper, or attach an .srt subtitle file.",
             code="whisper_not_installed",
         )
     return PipelineFailure(
         "SUBTITLE",
-        "没有字幕可分析：视频不带字幕，Whisper 已安装，但这次转写没有生成可用字幕。",
-        "确认视频里有清晰人声后重试，或重新导入时带上 .srt 字幕。",
+        "No subtitles available for analysis: Video has no subtitles, Whisper is installed, but transcription produced no captions.",
+        "Confirm the video has clear speech and try again, or attach an .srt subtitle file.",
         code="transcription_empty",
     )
 
 
 def failure_from_speech_error(message: str) -> PipelineFailure:
-    """转写异常收成同一套失败码，不再把「设置 → 语音识别」和「设置 → 默认模型 → 语音转字幕」叠在一起。"""
-    text = (message or "").strip().replace("设置 → 语音识别", "设置 → 默认模型 → 语音转字幕").replace("设置 → 转写", "设置 → 默认模型 → 语音转字幕")
+    """Turn speech recognition exception into standard pipeline failure."""
+    text = (message or "").strip().replace("设置 → 语音识别", "Settings → Default Models → Voice to Subtitles").replace("设置 → 转写", "Settings → Default Models → Voice to Subtitles")
     from backend.pipeline import media_precheck
 
     if media_precheck.is_no_audio_text(text):
-        # 视频本身没有音轨：不是转写设置的问题，不要指到「设置 → 默认模型 → 语音转字幕」。
         return media_precheck.no_audio_failure("SUBTITLE")
-    if "已超过时间上限" in text:
-        # Local Whisper wall clock (C2), same studio code as the clip-job cap.
+    if "已超过时间上限" in text or "exceeded time limit" in text.lower():
         return PipelineFailure("SUBTITLE", text, code="timeout")
     if 'SenseVoice' in text:
         return PipelineFailure('SUBTITLE', text,
-                               '' if '设置 → 默认模型 → 语音转字幕' in text else '到「设置 → 默认模型 → 语音转字幕」检查 SenseVoiceSmall，或导入 .srt 字幕。',
+                               '' if 'Settings → Default Models → Voice to Subtitles' in text else 'Go to Settings → Default Models → Voice to Subtitles to check SenseVoice, or attach an SRT subtitle file.',
                                code='subtitle_setup')
     from backend.services import whisper_runtime
 
     state = whisper_runtime.get_status().get("status")
-    not_installed = ("未安装" in text) or ("没有可用的语音识别" in text)
+    not_installed = ("未安装" in text) or ("没有可用的语音识别" in text) or ("not installed" in text.lower())
     if not_installed:
         if state == "error":
             return missing_subtitle_failure()
         return PipelineFailure(
             "SUBTITLE",
-            "没有字幕可分析：视频不带字幕，且本地 Whisper 还没安装。",
-            "到「设置 → 默认模型 → 语音转字幕」安装 Whisper 并下载一个模型，或重新导入时带上 .srt 字幕。",
+            "No subtitles available for analysis: Video has no subtitles and local Whisper is not installed.",
+            "Go to Settings → Default Models → Voice to Subtitles to install Whisper, or attach an SRT subtitle file.",
             code="whisper_not_installed",
         )
-    if any(token in text for token in ("未识别出任何语音", "没有从这段视频", "可用语音")):
+    if any(token in text for token in ("未识别出任何语音", "没有从这段视频", "可用语音", "no speech detected", "no usable speech")):
         return PipelineFailure(
             "SUBTITLE",
-            "没有字幕可分析：视频不带字幕，Whisper 已安装，但这次转写没有生成可用字幕。",
-            "确认视频里有清晰人声后重试，或重新导入时带上 .srt 字幕。",
+            "No subtitles available for analysis: Video has no subtitles, Whisper is installed, but transcription produced no captions.",
+            "Confirm the video has clear speech and try again, or attach an SRT subtitle file.",
             code="transcription_empty",
         )
-    hint = "" if "设置 → 默认模型 → 语音转字幕" in text else HINT_SUBTITLE
+    hint = "" if "Settings → Default Models → Voice to Subtitles" in text else HINT_SUBTITLE
     return PipelineFailure("SUBTITLE", text, hint, code="subtitle_setup")

@@ -57,21 +57,21 @@ export const SPONSOR_PROVIDERS = ['api88', 'infistar', 'apimart'] as const
 
 export const ADD_PROVIDER_HINT = '建议再加一个服务商'
 export const RECHARGE_LABEL = '去充值'
-export const VIEW_BALANCE_LABEL = '查看余额'
+export const VIEW_BALANCE_LABEL = 'View Balance'
 /** Fixed copy on the sponsor insufficient_quota failure card. */
-export const RECHARGE_HINT = '密钥没问题，是余额不足。充值后点重试即可。'
-export const SWITCH_MODEL_LABEL = '换模型重试'
+export const RECHARGE_HINT = 'API key is valid, but balance is insufficient. Top up and retry.'
+export const SWITCH_MODEL_LABEL = 'Switch Model & Retry'
 /** 1.5.9 3B: replace bare retry while quota is locked. */
-export const QUOTA_RETRY_CHECK_BALANCE = '核对余额并测试连接'
-export const QUOTA_PROVIDER_INSUFFICIENT = '服务商回复余额不足。'
-export const QUOTA_ZERO_BILLABLE = '这次制作没有向服务商发出计费请求。'
-export const QUOTA_N_BILLABLE = '这次制作向服务商发出了 {{count}} 次可能计费的请求。'
-export const QUOTA_PRECHECK_EXHAUSTED = '余额在开始前已核对。'
-export const QUOTA_RECHARGE_THEN_TEST = '充值后点测试连接再重试。'
+export const QUOTA_RETRY_CHECK_BALANCE = 'Check Balance & Test Connection'
+export const QUOTA_PROVIDER_INSUFFICIENT = 'Provider reported insufficient quota.'
+export const QUOTA_ZERO_BILLABLE = 'No billable requests were sent during this run.'
+export const QUOTA_N_BILLABLE = 'Sent {{count}} billable requests during this run.'
+export const QUOTA_PRECHECK_EXHAUSTED = 'Quota was checked before starting.'
+export const QUOTA_RECHARGE_THEN_TEST = 'Please top up and test connection before retrying.'
 
 /** 「本次已消耗 N 次请求」 — no dollar amount (X3). */
 export function billableCallsLine(count: number): string {
-  return `本次已消耗 ${count} 次请求`
+  return `${count} request${count > 1 ? 's' : ''} consumed for this run`
 }
 
 /** Resolve external recharge / balance URL for a catalog provider id. */

@@ -18,7 +18,7 @@ _SMALL_ALIASES = ("phi3", "phi-3", "phi4-mini", "phi-4-mini", "tinyllama", "smol
 _NOT_TIMELINE = ("embed", "whisper", "rerank")
 
 # The only user-facing sentence for this failure. No topic counts, no retry essay.
-WEAK_LOCAL_TIMELINE_REASON = "当前本地模型无法返回可用时间线"
+WEAK_LOCAL_TIMELINE_REASON = "The current local model cannot return a usable timeline."
 
 
 def _clean(value) -> str:
@@ -67,5 +67,5 @@ def empty_interval_hint(report: dict, chunks: list) -> str:
     and every other model keep their existing next step.
     """
     if any(isinstance(chunk, dict) and chunk.get("source") == "cache" for chunk in chunks):
-        return "本次回放了项目中的模型缓存，未重新请求模型；请重新导入素材创建新项目再试。"
-    return "请换用能稳定返回结构化时间线的模型后重试；本地模型需支持当前字幕长度。"
+        return "Replayed cached model output without making new requests. Please re-import media to create a new project and try again."
+    return "Please switch to a model that reliably returns structured timelines and retry. Local models must support the current subtitle length."

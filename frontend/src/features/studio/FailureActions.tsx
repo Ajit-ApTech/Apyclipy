@@ -219,7 +219,7 @@ export function FailureCopy({ info, message }: { info: FailureInfo; message: str
 
 function FailureCopyText({ step, reason, billing }: { step: string; reason: string; billing: string | null }) {
   return <>
-    <span className="studio-error">{t(step)}：{t(reason)}</span>
+    <span className="studio-error">{t(step)}: {t(reason)}</span>
     {billing ? <p className="studio-billing">{t(billing)}</p> : null}
   </>
 }

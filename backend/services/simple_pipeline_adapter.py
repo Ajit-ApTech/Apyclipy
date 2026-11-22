@@ -594,8 +594,8 @@ class SimplePipelineAdapter:
                     with llm_usage.timed("transcribe"):
                         srt_path = await self._generate_subtitle_automatically(input_video_path, metadata_dir)
                 except (CloudTranscriptionError, SpeechRecognitionError) as e:
-                    from backend.services.studio import audio as studio_audio
-                    if has_external or not studio_audio.has_audio(Path(input_video_path)):
+                    from backend.pipeline import media_precheck
+                    if has_external or media_precheck.is_no_audio_text(str(e)):
                         logger.info("No speech detected in audio/music (%s). Switching to music/visual highlight clipping.", e)
                         srt_path = metadata_dir / f"{Path(input_video_path).stem}.srt"
                         srt_path.write_text("", encoding="utf-8")
@@ -604,8 +604,11 @@ class SimplePipelineAdapter:
                             raise cloud_transcription_failure(e) from e
                         raise failure_from_speech_error(str(e)) from e
                 if not (srt_path and srt_path.exists()):
-                    srt_path = metadata_dir / f"{Path(input_video_path).stem}.srt"
-                    srt_path.write_text("", encoding="utf-8")
+                    if has_external:
+                        srt_path = metadata_dir / f"{Path(input_video_path).stem}.srt"
+                        srt_path.write_text("", encoding="utf-8")
+                    else:
+                        raise missing_subtitle_failure()
                 logger.info(f"自动生成字幕成功: {srt_path}")
                 # Stamp source fingerprint as soon as transcription is accepted.
                 # P1 #6: mark ASR origin so 「从头重做」 can safely delete only Whisper/cloud SRT.

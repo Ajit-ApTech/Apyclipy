@@ -7,10 +7,13 @@ from backend.utils.ffmpeg_utils import get_ffprobe_path, get_ffmpeg_path
 
 
 def has_audio(video):
-    result = subprocess.run([get_ffprobe_path(), '-v', 'error', '-select_streams', 'a:0',
-        '-show_entries', 'stream=index', '-of', 'json', str(video)], capture_output=True,
-        text=True, check=True, timeout=30)
-    return bool(json.loads(result.stdout).get('streams'))
+    try:
+        result = subprocess.run([get_ffprobe_path(), '-v', 'error', '-select_streams', 'a:0',
+            '-show_entries', 'stream=index', '-of', 'json', str(video)], capture_output=True,
+            text=True, check=True, timeout=30)
+        return bool(json.loads(result.stdout).get('streams'))
+    except Exception:
+        return False
 
 
 def get_audio_duration(audio_path) -> float:
