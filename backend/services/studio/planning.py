@@ -194,13 +194,17 @@ def _subtitle_blockers(video: Path, duration: float, options: ImportOptions, con
     from backend.pipeline import media_precheck
     from backend.services.studio import preflight
     srt_attached = (video.parent / 'input.srt').is_file()
+    external_audio_attached = any(
+        (video.parent / f'audio_track{ext}').is_file() or (video.parent / f'bg_music{ext}').is_file()
+        for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
+    )
     # #351: the subtitle-route verdict is the one classify_source; audio is only looked up when it matters.
-    audio = None if srt_attached or media_precheck.too_short(duration) else media_precheck.has_audio(video)
+    audio = None if srt_attached or external_audio_attached or media_precheck.too_short(duration) else media_precheck.has_audio(video)
     probe = preflight.MaterialProbe(preflight.ProbeState.READABLE, Path(video), duration, audio)
-    verdict = preflight.classify_source(probe, srt_available=srt_attached, subtitle_route=True)
+    verdict = preflight.classify_source(probe, srt_available=srt_attached, subtitle_route=True, audio_available=external_audio_attached)
     code = verdict.code if verdict is not None else None
     short = code == media_precheck.SOURCE_TOO_SHORT
-    no_audio = code == media_precheck.SOURCE_NO_AUDIO
+    no_audio = code == media_precheck.SOURCE_NO_AUDIO and not external_audio_attached
     if not (short or no_audio):
         return False, False
     vision = duration <= VISUAL_MAX_SOURCE_SEC and configured

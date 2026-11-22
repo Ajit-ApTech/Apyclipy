@@ -211,9 +211,13 @@ def render_draft(project_id, video, draft: Draft, job_id, progress, *, brand_out
     w, h = int(w) // 2 * 2, int(h) // 2 * 2
     warnings = []
     draft = recover_empty_packaging(project_id, draft, warnings)
-    keep_audio = draft.original_audio and audio.has_audio(video)
+    raw_dir = directory(project_id) / 'raw'
+    external_audio = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+    bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
+    has_sound = bool(external_audio or bg_music or audio.has_audio(video))
+    keep_audio = draft.original_audio and has_sound
     if draft.original_audio and not keep_audio:
-        warnings.append('原素材没有音轨，本次导出无声')
+        warnings.append('Original source has no audio track, output has no audio')
     packaged = draft.packaging is not None
     # Template packaging carries its own captions and title; the legacy subtitle/title path stays off.
     entries = _load_srt_entries(project_id) if draft.subtitles and not packaged else []
@@ -345,6 +349,33 @@ def _encode_draft(
                         silence_input = 1 + int(scene_overlay is not None) + int(artwork is not None) + int(backdrop is not None)
                         if keep_audio:
                             cmd += ['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000']
+                        
+                        audio_input_idx = 0
+                        bgm_input_idx = None
+                        if keep_audio:
+                            raw_dir = directory(project_id) / 'raw'
+                            external_audio = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+                            bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
+                            curr_input = silence_input + 1
+                            if external_audio:
+                                cmd += ['-ss', str(scene.start), '-i', str(external_audio)]
+                                audio_input_idx = curr_input
+                                curr_input += 1
+                                if bg_music:
+                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    bgm_input_idx = curr_input
+                                    curr_input += 1
+                            elif bg_music:
+                                if audio.has_audio(video):
+                                    audio_input_idx = 0
+                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    bgm_input_idx = curr_input
+                                    curr_input += 1
+                                else:
+                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    audio_input_idx = curr_input
+                                    curr_input += 1
+
                         cmd += ['-t', str(duration)]
                         graph = None
                         if built:
@@ -371,7 +402,7 @@ def _encode_draft(
                         else:
                             cmd += ['-map', '0:v:0']
                         if keep_audio:
-                            graph = ';'.join(filter(None, [graph, audio.cut_filters(silence_input, duration)]))
+                            graph = ';'.join(filter(None, [graph, audio.cut_filters(silence_input, duration, audio_input=audio_input_idx, bgm_input=bgm_input_idx)]))
                             cmd += ['-map', '[audioout]', '-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2']
                         else:
                             cmd += ['-an']

@@ -16,13 +16,23 @@ def scene_duration(scene):
     return max(1, round((scene.end-scene.start)*30)) / 30
 
 
-def cut_filters(silence_input, duration):
+def cut_filters(silence_input, duration, audio_input=0, bgm_input=None, ducking=True):
     # The silence input is finite via atrim. It also covers ranges after the
     # original audio track ends, where apad alone receives no input frames.
     fade_in = min(.008, duration/4)
     fade_out = min(.012, duration/4)
+    if bgm_input is not None:
+        bgm_vol = '0.20' if ducking else '0.40'
+        return (
+            f'[{audio_input}:a:0]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:channel_layouts=stereo[primary_a];'
+            f'[{bgm_input}:a:0]aresample=48000:async=1:first_pts=0,volume={bgm_vol},aformat=sample_fmts=fltp:channel_layouts=stereo[bgm_a];'
+            f'[primary_a][bgm_a]amix=inputs=2:duration=longest:normalize=0[mixed_original];'
+            f'[{silence_input}:a:0][mixed_original]amix=inputs=2:duration=longest:normalize=0,'
+            f'atrim=duration={duration},asetpts=PTS-STARTPTS,'
+            f'afade=t=in:st=0:d={fade_in},afade=t=out:st={duration-fade_out}:d={fade_out}[audioout]'
+        )
     return (
-        '[0:a:0]aresample=48000:async=1:first_pts=0,'
+        f'[{audio_input}:a:0]aresample=48000:async=1:first_pts=0,'
         'aformat=sample_fmts=fltp:channel_layouts=stereo[original];'
         f'[{silence_input}:a:0][original]amix=inputs=2:duration=longest:normalize=0,'
         f'atrim=duration={duration},asetpts=PTS-STARTPTS,'

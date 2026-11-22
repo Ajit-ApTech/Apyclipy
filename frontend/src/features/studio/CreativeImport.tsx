@@ -144,6 +144,9 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
   })
   const [file, setFile] = useState<File | null>(null)
   const [subtitle, setSubtitle] = useState<File | null>(null)
+  const [audioTrack, setAudioTrack] = useState<File | null>(null)
+  const [bgMusic, setBgMusic] = useState<File | null>(null)
+  const [autoDucking, setAutoDucking] = useState<boolean>(true)
   const [options, setOptions] = useState<ImportOptions>({...defaultImportOptions})
   const templatesOn = useFlag('pkg_templates_v1') === true
   const visualOn = useFlag('pkg_template_picker_visual') === true
@@ -505,6 +508,9 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
       }
       body.append('download_quality', downloadQuality)
       if (subtitle) body.append('subtitle', subtitle)
+      if (audioTrack) body.append('audio_track', audioTrack)
+      if (bgMusic) body.append('bg_music', bgMusic)
+      body.append('auto_ducking', String(autoDucking))
       body.append('name', file && source === 'file' ? file.name.replace(/\.[^.]+$/, '') : "Apyclipy Smart Clip")
       if (source === 'file' && file) body.append('video', file)
       else { body.append('url', url.trim()); if (browser) body.append('browser', browser) }
@@ -596,19 +602,99 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
       {templatesOn && options.html_template === 'classic' && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <div className="studio-field"><span>Vertical Layout</span><Select aria-label="Vertical Layout" disabled={busy} value={options.portrait_style || 'auto'} options={[{value:'auto',label:'Platform Default'},{value:'interview',label:'Interview (Windowed)'},{value:'podcast',label:'Podcast (Full Screen)'}]} onChange={portrait_style=>setOptions({...options,portrait_style})}/><small>Only adjusts vertical framing layout.</small></div>}
       <OutputCaptionsSwitch label="Subtitles / Captions" hint="When disabled, videos are rendered without burned-in subtitles." />
       <details className="studio-details"><summary>Any special instructions? (Optional)</summary><label className="studio-field"><span className="studio-sr">Instructions</span><input aria-label="Instructions" placeholder="e.g. Focus on key arguments or intense reactions" maxLength={1000} value={options.instruction} disabled={busy} onChange={e=>setOptions({...options,instruction:e.target.value})}/></label></details>
-      <details className="studio-details studio-advanced-details" open={Boolean(customStartTime || customEndTime || maxClips !== 'auto' || downloadQuality !== '1080p')}>
+      <details className="studio-details studio-advanced-details" open={Boolean(customStartTime || customEndTime || maxClips !== 'auto' || downloadQuality !== '1080p' || audioTrack || bgMusic)}>
         <summary className="studio-details-summary">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
-            <b>Advanced Clipping & Download Settings</b>
+            <b>Advanced Clipping, Audio & Download Settings</b>
           </span>
-          <span className="studio-muted" style={{ fontSize: '12px' }}>Segment Crop · Target Clips · Quality</span>
+          <span className="studio-muted" style={{ fontSize: '12px' }}>Soundtrack · Voiceover · Segment Crop · Target Clips</span>
         </summary>
         <div className="studio-bento-panel">
           <div className="studio-bento-grid">
+            <div className="studio-bento-card">
+              <div className="studio-bento-card-head">
+                <span className="studio-bento-title">Voiceover / Audio Track</span>
+                <span className="ac-mono studio-bento-tag" style={audioTrack ? { color: 'var(--ac-accent)' } : undefined}>
+                  {audioTrack ? 'Attached' : 'Optional'}
+                </span>
+              </div>
+              <p className="studio-muted studio-bento-desc">
+                For DJI drone shots & silent video. Transcribes into auto-captions.
+              </p>
+              {audioTrack ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--ac-card-bg)', borderRadius: '6px', border: '1px solid var(--ac-border)' }}>
+                  <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                    🎵 {audioTrack.name}
+                  </span>
+                  <button type="button" className="studio-link" disabled={busy} onClick={() => setAudioTrack(null)}>Remove</button>
+                </div>
+              ) : (
+                <label className="ac-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textAlign: 'center', fontSize: '13px', color: 'var(--ac-accent)' }}>
+                  <span>+ Upload Voiceover / Song (.mp3, .wav, .m4a)</span>
+                  <input
+                    type="file"
+                    style={{ display: 'none' }}
+                    accept=".mp3,.wav,.m4a,.aac,.flac"
+                    disabled={busy}
+                    onChange={e => {
+                      const f = e.target.files?.[0] || null
+                      setAudioTrack(f)
+                      if (f) setError('')
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="studio-bento-card">
+              <div className="studio-bento-card-head">
+                <span className="studio-bento-title">Background Music</span>
+                <span className="ac-mono studio-bento-tag" style={bgMusic ? { color: 'var(--ac-accent)' } : undefined}>
+                  {bgMusic ? 'Attached' : 'Optional'}
+                </span>
+              </div>
+              <p className="studio-muted studio-bento-desc">
+                Adds soundtrack with auto-ducking during voiceover or speech.
+              </p>
+              {bgMusic ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--ac-card-bg)', borderRadius: '6px', border: '1px solid var(--ac-border)' }}>
+                    <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                      🎶 {bgMusic.name}
+                    </span>
+                    <button type="button" className="studio-link" disabled={busy} onClick={() => setBgMusic(null)}>Remove</button>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', cursor: 'pointer', color: 'var(--ac-fg)' }}>
+                    <input
+                      type="checkbox"
+                      checked={autoDucking}
+                      onChange={e => setAutoDucking(e.target.checked)}
+                      disabled={busy}
+                    />
+                    <span>Auto-duck music during voiceover</span>
+                  </label>
+                </>
+              ) : (
+                <label className="ac-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textAlign: 'center', fontSize: '13px', color: 'var(--ac-accent)' }}>
+                  <span>+ Upload Background Music (.mp3, .wav, .m4a)</span>
+                  <input
+                    type="file"
+                    style={{ display: 'none' }}
+                    accept=".mp3,.wav,.m4a,.aac,.flac"
+                    disabled={busy}
+                    onChange={e => {
+                      const f = e.target.files?.[0] || null
+                      setBgMusic(f)
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+
             <div className="studio-bento-card">
               <div className="studio-bento-card-head">
                 <span className="studio-bento-title">Target Clip Count</span>

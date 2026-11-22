@@ -55,21 +55,28 @@ def validate_draft(project_id, draft):
     duration = intelligence._probe(jobs.source(project_id)).get('duration', 0)
     intelligence.validate_scenes(draft.scenes, duration)
 
-async def _stage_for_gate(video, first_chunk, ext, *, srt_available: bool, route: str = 'studio', goal: str | None = 'auto'):
+async def _stage_for_gate(video, first_chunk, ext, *, srt_available: bool, route: str = 'studio', goal: str | None = 'auto', has_external_audio: bool = False):
     """Stage the upload outside any project and run the one preflight on it, in the threadpool.
     Any refusal or failure removes the staged file, so a refused import leaves no project, state or file."""
     from backend.services.studio import preflight
     from backend.api.v1 import transcription_gate
     staged = await stage_upload(video, first_chunk, ext)
+    subtitle = None
+    audio_file = None
     try:
         subtitle = staged.with_suffix('.srt') if srt_available else None
+        audio_file = staged.with_suffix('.mp3') if has_external_audio else None
         if subtitle is not None:
             subtitle.write_bytes(b'')  # the SRT is written into the project later; only its presence counts here
+        if audio_file is not None:
+            audio_file.write_bytes(b'')
         try:
-            await transcription_gate.run(preflight.ResolvedInputs(staged, subtitle, entry=route, goal=goal))
+            await transcription_gate.run(preflight.ResolvedInputs(staged, subtitle, entry=route, goal=goal, audio_track=audio_file))
         finally:
             if subtitle is not None:
                 subtitle.unlink(missing_ok=True)
+            if audio_file is not None:
+                audio_file.unlink(missing_ok=True)
     except BaseException:
         staged.unlink(missing_ok=True)
         raise
@@ -240,7 +247,10 @@ async def import_visual(
     recommended_template: Optional[Literal['editorial', 'street', 'classic']] = Form(None),
     brand_outro_enabled: bool = Form(False),
     subtitle: Optional[UploadFile] = File(None),
-    name: str = Form('智能剪辑', max_length=200),
+    audio_track: Optional[UploadFile] = File(None),
+    bg_music: Optional[UploadFile] = File(None),
+    auto_ducking: bool = Form(True),
+    name: str = Form('Apyclipy Smart Clip', max_length=200),
     url: Optional[str] = Form(None),
     browser: Optional[Literal['chrome', 'edge', 'firefox', 'safari']] = Form(None),
     video: Optional[UploadFile] = File(None),
@@ -252,36 +262,60 @@ async def import_visual(
     db: Session = Depends(get_db),
 ):
     if bool(url) == bool(video):
-        raise HTTPException(422, '请提供一个视频链接或文件')
+        raise HTTPException(422, 'Please provide a video link or upload a video file')
     from backend.services.studio import readiness
     call(readiness.ensure_analysis_usable)
     if url:
         parsed = urlparse(url)
         host = (parsed.hostname or '').lower()
         if parsed.scheme != 'https' or parsed.username or parsed.password or not any(host == d or host.endswith('.' + d) for d in ('youtube.com', 'youtu.be', 'bilibili.com', 'b23.tv')):
-            raise HTTPException(422, '仅支持 HTTPS 的 B 站或 YouTube 视频链接')
+            raise HTTPException(422, 'Only HTTPS YouTube or Bilibili links are supported')
     ext = Path(video.filename or '').suffix.lower() if video else '.mp4'
     if ext not in ('.mp4', '.mov', '.mkv', '.webm', '.avi'):
-        raise HTTPException(422, '不支持的视频格式')
+        raise HTTPException(422, 'Unsupported video format')
     first_chunk = await video.read(1024 * 1024) if video else None
     if video and not first_chunk:
         await video.close()
-        raise HTTPException(422, '视频文件为空，请重新选择')
+        raise HTTPException(422, 'Video file is empty, please select another file')
     subtitle_bytes = None
     if subtitle:
         try:
             if Path(subtitle.filename or '').suffix.lower() != '.srt':
-                raise HTTPException(422, '字幕文件仅支持 SRT')
+                raise HTTPException(422, 'Subtitle file must be SRT (.srt)')
             subtitle_bytes = await subtitle.read(2 * 1024 * 1024 + 1)
             if not subtitle_bytes or len(subtitle_bytes) > 2 * 1024 * 1024:
-                raise HTTPException(422, '字幕文件为空或超过 2 MB')
+                raise HTTPException(422, 'Subtitle file is empty or exceeds 2 MB')
         finally:
             await subtitle.close()
+    audio_track_bytes = None
+    audio_track_ext = '.mp3'
+    if audio_track:
+        try:
+            audio_track_ext = Path(audio_track.filename or '').suffix.lower()
+            if audio_track_ext not in ('.mp3', '.wav', '.m4a', '.aac', '.flac'):
+                raise HTTPException(422, 'Unsupported audio track format (supported: .mp3, .wav, .m4a, .aac, .flac)')
+            audio_track_bytes = await audio_track.read(50 * 1024 * 1024 + 1)
+            if not audio_track_bytes or len(audio_track_bytes) > 50 * 1024 * 1024:
+                raise HTTPException(422, 'Audio track is empty or exceeds 50 MB')
+        finally:
+            await audio_track.close()
+    bg_music_bytes = None
+    bg_music_ext = '.mp3'
+    if bg_music:
+        try:
+            bg_music_ext = Path(bg_music.filename or '').suffix.lower()
+            if bg_music_ext not in ('.mp3', '.wav', '.m4a', '.aac', '.flac'):
+                raise HTTPException(422, 'Unsupported background music format (supported: .mp3, .wav, .m4a, .aac, .flac)')
+            bg_music_bytes = await bg_music.read(50 * 1024 * 1024 + 1)
+            if not bg_music_bytes or len(bg_music_bytes) > 50 * 1024 * 1024:
+                raise HTTPException(422, 'Background music file is empty or exceeds 50 MB')
+        finally:
+            await bg_music.close()
     staged = None
     if video:
-        # 1.5.7: block before creating a project when local Whisper is required but missing.
+        has_external = bool(audio_track_bytes is not None or bg_music_bytes is not None)
         try:
-            staged = await _stage_for_gate(video, first_chunk, ext, srt_available=subtitle_bytes is not None, goal=goal)
+            staged = await _stage_for_gate(video, first_chunk, ext, srt_available=subtitle_bytes is not None, goal=goal, has_external_audio=has_external)
         except HTTPException:
             await video.close()
             raise
@@ -301,7 +335,20 @@ async def import_visual(
             max_clips=max_clips,
             download_quality=download_quality,
         )
-        project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or '智能剪辑', project_type=ProjectType.DEFAULT, source_url=url, settings={'creative': {'goal': goal}, 'smart_import': prefs.model_dump(), 'import_staging': not prefs.auto_start, 'creative_browser': browser, 'platforms': prefs.platforms, 'brand_outro_enabled': prefs.branding.outro_enabled, 'max_clips': max_clips, 'download_quality': download_quality}))
+        settings_dict = {
+            'creative': {'goal': goal},
+            'smart_import': prefs.model_dump(),
+            'import_staging': not prefs.auto_start,
+            'creative_browser': browser,
+            'platforms': prefs.platforms,
+            'brand_outro_enabled': prefs.branding.outro_enabled,
+            'max_clips': max_clips,
+            'download_quality': download_quality,
+            'audio_track': f'audio_track{audio_track_ext}' if audio_track_bytes else None,
+            'bg_music': f'bg_music{bg_music_ext}' if bg_music_bytes else None,
+            'auto_ducking': auto_ducking,
+        }
+        project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or 'Apyclipy Smart Clip', project_type=ProjectType.DEFAULT, source_url=url, settings=settings_dict))
     except BaseException:
         if staged is not None:
             staged.unlink(missing_ok=True)
@@ -317,6 +364,10 @@ async def import_visual(
                 # Upload carried an SRT but no local video yet (URL path); still stamp origin.
                 from backend.services.studio import pipeline_resume
                 pipeline_resume.record_srt_origin(store.directory(pid) / 'metadata', 'attached')
+        if audio_track_bytes is not None:
+            (raw / f'audio_track{audio_track_ext}').write_bytes(audio_track_bytes)
+        if bg_music_bytes is not None:
+            (raw / f'bg_music{bg_music_ext}').write_bytes(bg_music_bytes)
         if video:
             path = raw / ('input' + ext)
             if staged is not None:

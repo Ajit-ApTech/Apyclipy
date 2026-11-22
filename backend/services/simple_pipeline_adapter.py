@@ -300,13 +300,18 @@ class SimplePipelineAdapter:
                 from backend.utils.transcription_progress import reporting
                 window = _plan_source_window(self.project_id)
                 asr_input = video_file_path
+                raw_dir = metadata_dir.parent / 'raw'
+                external_audio = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+                if external_audio:
+                    logger.info("Using uploaded voiceover / audio track for subtitle generation: %s", external_audio)
+                    asr_input = external_audio
                 temp_audio = None
                 shift = 0.0
                 if window:
                     start, end = window
                     temp_audio = metadata_dir / f"source_window_{int(start)}_{int(end)}.wav"
-                    logger.info('T2: cutting ASR audio window [%.1f, %.1f) from %s', start, end, video_file_path)
-                    _cut_audio_window(video_file_path, start, end, temp_audio)
+                    logger.info('T2: cutting ASR audio window [%.1f, %.1f) from %s', start, end, asr_input)
+                    _cut_audio_window(asr_input, start, end, temp_audio)
                     asr_input = temp_audio
                     shift = start
                 try:

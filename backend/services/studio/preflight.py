@@ -64,10 +64,19 @@ class ResolvedInputs:
     goal: Optional[str] = 'auto'
     # Route already fixed by the caller (confirm page: the confirmed analysis), else derived from settings.
     route: Optional[Literal['subtitle', 'visual']] = None
+    audio_track: Optional[Path] = None
+    bg_music: Optional[Path] = None
 
     @property
     def srt_available(self) -> bool:
         return bool(self.subtitle and Path(self.subtitle).is_file())
+
+    @property
+    def audio_available(self) -> bool:
+        return bool(
+            (self.audio_track and Path(self.audio_track).is_file())
+            or (self.bg_music and Path(self.bg_music).is_file())
+        )
 
 
 @dataclass(frozen=True)
@@ -168,7 +177,7 @@ def probe_from_info(video, info: Optional[dict]) -> MaterialProbe:
 
 
 def classify_source(probe: MaterialProbe, *, srt_available: bool, subtitle_route: bool,
-                    stage: str = 'INGEST') -> Optional[PipelineFailure]:
+                    stage: str = 'INGEST', audio_available: bool = False) -> Optional[PipelineFailure]:
     """The one source classification. Unreadable / under 1 s block on every route; too short / no audio only
     on the subtitle route. A probe that did not run is a caller bug, never a pass."""
     from backend.pipeline import media_precheck
@@ -182,7 +191,7 @@ def classify_source(probe: MaterialProbe, *, srt_available: bool, subtitle_route
         return None
     if media_precheck.too_short(probe.duration):
         return media_precheck.too_short_failure(stage)
-    if not srt_available and probe.audio is False:
+    if not srt_available and not audio_available and probe.audio is False:
         return media_precheck.no_audio_failure(stage)
     return None
 
@@ -233,7 +242,10 @@ def preflight(inputs: ResolvedInputs, *, probe: MaterialProbe = NOT_PROBED,
     route, certain = _route(inputs, probe, settings)
     srt = inputs.srt_available
     # 1. the source: decided before any install prompt, on every entry, SRT or not.
-    failure = classify_source(probe, srt_available=srt, subtitle_route=(route == 'subtitle' and certain), stage=stage)
+    failure = classify_source(
+        probe, srt_available=srt, subtitle_route=(route == 'subtitle' and certain),
+        stage=stage, audio_available=inputs.audio_available,
+    )
     base = PreflightResult(inputs, probe, settings, route, certain)
     if failure is not None:
         return replace(base, source_failure=failure)
@@ -273,7 +285,11 @@ def project_inputs(project_id: str, *, entry: Entry = 'content', goal: Optional[
                   if (raw / f'input{ext}').is_file()), None)
     if video is None:
         return None
-    return ResolvedInputs(video, raw / 'input.srt', entry=entry, goal=goal)
+    audio_track = next((raw / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
+                       if (raw / f'audio_track{ext}').is_file()), None)
+    bg_music = next((raw / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
+                    if (raw / f'bg_music{ext}').is_file()), None)
+    return ResolvedInputs(video, raw / 'input.srt', entry=entry, goal=goal, audio_track=audio_track, bg_music=bg_music)
 
 
 def path_inputs(video, srt=None, *, sibling_srt: bool = True, entry: Entry = 'content',
