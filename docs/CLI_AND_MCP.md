@@ -74,7 +74,7 @@ MCP 不再接收 `api_key` 参数。模型密钥用环境变量 `AUTOCLIP_API_KE
 
 ```bash
 uvx autoclip-mcp
-npx skills add zhouxiaoka/autoclip
+npx skills add Ajit-ApTech/Apyclipy
 ```
 
 PyPI 发行名是 `autoclip-mcp`。`uvx autoclip-mcp` 会安装这个包并运行 MCP 入口，包里的 CLI 命令仍是 `autoclip`。wheel 文件名是 `autoclip_mcp-<version>-py3-none-any.whl`。已发布的 ZIP 里用 `autoclip_mcp-*-py3-none-any.whl`。
@@ -82,7 +82,7 @@ PyPI 发行名是 `autoclip-mcp`。`uvx autoclip-mcp` 会安装这个包并运�
 从源码安装仍可用。在已克隆的仓库根目录执行：
 
 ```bash
-git clone https://github.com/zhouxiaoka/autoclip.git && cd autoclip
+git clone https://github.com/Ajit-ApTech/Apyclipy.git && cd autoclip
 python3 -m venv venv && source venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip install --no-deps .
@@ -261,7 +261,7 @@ claude mcp add autoclip -- /path/to/autoclip/venv/bin/autoclip mcp
 
 ### MCPB（Smithery 本地 stdio）
 
-MCPB（MCP Bundle）是带 `manifest.json` 的 ZIP，扩展名 `.mcpb`。Official MCP Registry 上的 `io.github.zhouxiaoka/autoclip-mcp` 仍走 PyPI 和 `uvx autoclip-mcp`。Smithery 的本地 stdio 列表要另外上传一个 `.mcpb`。
+MCPB（MCP Bundle）是带 `manifest.json` 的 ZIP，扩展名 `.mcpb`。Official MCP Registry 上的 `io.github.Ajit-ApTech/Apyclipy-mcp` 仍走 PyPI 和 `uvx autoclip-mcp`。Smithery 的本地 stdio 列表要另外上传一个 `.mcpb`。
 
 `mcpb/` 是薄封装，不把 `backend/` 打进包。`mcpb/pyproject.toml` 依赖已发布的 `autoclip-mcp`（当前 pin 与仓库根 `pyproject.toml` 的版本一致），`mcpb/src/server.py` 只转调 `backend.mcp_server:main`。宿主用 UV 安装这个 PyPI 包。安装后的 server 需要 PATH 里有 `uv`、`ffmpeg`、`ffprobe`。Python 3.10+ 由 UV 准备。
 
@@ -291,7 +291,7 @@ npx --yes @anthropic-ai/mcpb@2.1.2 pack mcpb dist/autoclip-mcp.mcpb
 发布到 Smithery 要维护者自己的登录。仓库脚本不会执行这一步，也不保存 API key。`-n` 用 Smithery 上实际的 namespace/server；与 Official MCP Registry 同名时是：
 
 ```bash
-smithery mcp publish ./dist/autoclip-mcp.mcpb -n io.github.zhouxiaoka/autoclip-mcp
+smithery mcp publish ./dist/autoclip-mcp.mcpb -n io.github.Ajit-ApTech/Apyclipy-mcp
 ```
 
 Smithery 日后若接受 `server.type: uv`，只改清单里的类型即可，启动命令和 PyPI 依赖不用改。不要为此去抬 PyPI 版本。

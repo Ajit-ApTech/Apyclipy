@@ -8,7 +8,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 GUIDE_SRC = HERE / "guides" / "publish" / "index.html"
-SITEMAP_URL = "https://zhouxiaoka.github.io/autoclip_intro/guides/publish/"
+SITEMAP_URL = "https://ajit-aptech.github.io/Apyclipy/guides/publish/"
 
 FAQ_HTML = """        <details>
           <summary data-i18n="faq.7.q">怎么发布到 B 站和海外平台？</summary>
@@ -91,7 +91,7 @@ def patch_index(html: str) -> str:
     if 'data-i18n="footer.publish"' not in html:
         html = insert_before(
             html,
-            '      <a href="https://github.com/zhouxiaoka/autoclip" target="_blank" rel="noopener">GitHub</a>',
+            '      <a href="https://github.com/Ajit-ApTech/Apyclipy" target="_blank" rel="noopener">GitHub</a>',
             FOOTER_HTML,
         )
 

@@ -67,6 +67,23 @@ class ResolvedInputs:
     audio_track: Optional[Path] = None
     bg_music: Optional[Path] = None
 
+    def __post_init__(self):
+        if self.video:
+            try:
+                parent = Path(self.video).parent
+                if self.audio_track is None and parent.is_dir():
+                    at = next((parent / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
+                              if (parent / f'audio_track{ext}').is_file()), None)
+                    if at is not None:
+                        object.__setattr__(self, 'audio_track', at)
+                if self.bg_music is None and parent.is_dir():
+                    bg = next((parent / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
+                              if (parent / f'bg_music{ext}').is_file()), None)
+                    if bg is not None:
+                        object.__setattr__(self, 'bg_music', bg)
+            except Exception:
+                pass
+
     @property
     def srt_available(self) -> bool:
         return bool(self.subtitle and Path(self.subtitle).is_file())

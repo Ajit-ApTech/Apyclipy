@@ -205,7 +205,8 @@ export function readinessLineItems(report: ImportReadiness | null | undefined): 
   return (['analysis', 'transcription', 'visual', 'ffmpeg'] as const).map(key => {
     const check = checks?.[key]
     const title = LINE_TITLES[key]
-    const detail = (check?.label || '').trim() || defaultDetail(key, check)
+    let detail = (check?.label || '').trim() || defaultDetail(key, check)
+    detail = detail.replace(/^本地\s*/, 'Local ').replace(/未启用/, 'Not enabled')
     const checkRepair = (check?.repair || 'none') as RepairAction
     // Click always jumps to the matching settings section; needsFix only when the check itself is ✗.
     const repair = checkRepair !== 'none' ? checkRepair : LINE_DEFAULT_REPAIR[key]

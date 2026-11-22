@@ -7,21 +7,21 @@ import {
 } from '../../analytics/flags'
 
 const LABELS: Record<FlagName, string> = {
-  autoclip_safe_mode: '关闭全部新功能',
-  remember_platforms: '记住上次选择的平台',
-  one_click_paste_start: '粘贴链接后自动开始',
-  link_import_without_whisper: '链接导入不等待本地转写',
-  notify_on_done: '制作完成时通知',
-  publish_pack_v2: '复制文案并保存视频和封面',
-  render_top_first: '先渲染得分最高的几条',
-  clip_reasons: '在卡片上写选片理由',
-  hide_legacy_entrypoints: '隐藏旧的制作入口',
-  import_drop_zone: '首页使用居中的拖放区',
-  track_overrides: '记录对自动决定的修改',
-  qa_gate_blocking: '成片质检',
-  pkg_templates_v1: 'editing_style.flag_templates',
-  pkg_template_picker_visual: 'editing_style.flag_visual',
-  mcp_v2_tools: 'MCP 新工具（取消任务、剪辑风格列表）',
+  autoclip_safe_mode: 'Safe Mode (Disable experimental features)',
+  remember_platforms: 'Remember selected platforms',
+  one_click_paste_start: 'Auto-start after pasting video URL',
+  link_import_without_whisper: 'Link import without waiting for local transcription',
+  notify_on_done: 'Desktop notification when completed',
+  publish_pack_v2: 'Copy caption and save video + cover together',
+  render_top_first: 'Render highest-scored highlight clips first',
+  clip_reasons: 'Show AI selection reason on clip cards',
+  hide_legacy_entrypoints: 'Hide legacy production entrypoints',
+  import_drop_zone: 'Centered drag & drop zone on home screen',
+  track_overrides: 'Track custom parameter overrides',
+  qa_gate_blocking: 'Production video quality QA checks',
+  pkg_templates_v1: 'Visual template system v1',
+  pkg_template_picker_visual: 'Visual template picker cards',
+  mcp_v2_tools: 'MCP v2 Tools (Cancel tasks, editing styles)',
 }
 
 const VARIANT_LABELS: Record<string, string> = {

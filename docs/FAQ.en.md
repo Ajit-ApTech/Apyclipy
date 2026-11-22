@@ -24,13 +24,13 @@ To see a result before you configure anything: when the home screen has no proje
 
 After that, use your own 3–5 minute clip with clear speech, preferably with an accurately timed `.srt`. Use a local file or Bilibili, and confirm that you have the right to use it.
 
-Setup steps are in the [installation guide](USER_INSTALLATION_GUIDE.en.md#see-the-example-then-use-your-own-clip); sticking points are in [Discussion #128](https://github.com/zhouxiaoka/autoclip/discussions/128).
+Setup steps are in the [installation guide](USER_INSTALLATION_GUIDE.en.md#see-the-example-then-use-your-own-clip); sticking points are in [Discussion #128](https://github.com/Ajit-ApTech/Apyclipy/discussions/128).
 
 ## Installation and startup
 
 ### Which file should I download?
 
-In [Releases](https://github.com/zhouxiaoka/autoclip/releases/latest), choose `aarch64.dmg` for Apple Silicon Mac or `x64-setup.exe` for Windows x64. There is no Intel Mac desktop build; use Docker or the CLI, the same as Linux. Check the actual release assets; `Source code` is not a desktop installer. For a first look, use “用示例项目看看效果” in the app. The example is inside the installer.
+In [Releases](https://github.com/Ajit-ApTech/Apyclipy/releases/latest), choose `aarch64.dmg` for Apple Silicon Mac or `x64-setup.exe` for Windows x64. There is no Intel Mac desktop build; use Docker or the CLI, the same as Linux. Check the actual release assets; `Source code` is not a desktop installer. For a first look, use “用示例项目看看效果” in the app. The example is inside the installer.
 
 On macOS 15 and later, double-click once. If macOS blocks the app, open System Settings → Privacy & Security → Open Anyway ([Apple’s note](https://developer.apple.com/news/?id=saqachfa)). On older macOS, right-click the app and choose Open. If Windows SmartScreen appears, choose More info → Run anyway. Routine use does not require administrator privileges. Details are in the [installation guide](USER_INSTALLATION_GUIDE.en.md).
 
@@ -75,7 +75,7 @@ You can still use local Whisper. A video without subtitles has to download the l
 
 ### What if installing Whisper on Windows still says mlx-whisper only supports Apple Silicon?
 
-If installing local Whisper from Settings → Default models → “Speech to subtitles” still shows the red error 「mlx-whisper 仅支持 Apple Silicon (macOS)」 on Windows or any other non-Mac system, update to **v1.3.3** or later (includes [#145](https://github.com/zhouxiaoka/autoclip/pull/145)). On desktop, use Settings → Application → Check for updates, or download it from [Releases](https://github.com/zhouxiaoka/autoclip/releases). Older builds showed that message and blocked the install by mistake. After you update, install again. See [#141](https://github.com/zhouxiaoka/autoclip/issues/141).
+If installing local Whisper from Settings → Default models → “Speech to subtitles” still shows the red error 「mlx-whisper 仅支持 Apple Silicon (macOS)」 on Windows or any other non-Mac system, update to **v1.3.3** or later (includes [#145](https://github.com/Ajit-ApTech/Apyclipy/pull/145)). On desktop, use Settings → Application → Check for updates, or download it from [Releases](https://github.com/Ajit-ApTech/Apyclipy/releases). Older builds showed that message and blocked the install by mistake. After you update, install again. See [#141](https://github.com/Ajit-ApTech/Apyclipy/issues/141).
 
 ### Why were no clips generated?
 
@@ -95,7 +95,7 @@ autoclip doctor --provider ollama
 autoclip run talk.mp4 --provider ollama --srt talk.srt --min-score 0.5 --json
 ```
 
-Replace the filenames and provider with your actual setup. Without SRT, remove `--srt talk.srt` and prepare transcription first. Lowering the threshold changes selection; it does not guarantee clips. For a first check, use “用示例项目看看效果” on the home screen, or a clip you provide. If usage is still unclear, continue in the [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128). Reproducible bugs still belong in Issues.
+Replace the filenames and provider with your actual setup. Without SRT, remove `--srt talk.srt` and prepare transcription first. Lowering the threshold changes selection; it does not guarantee clips. For a first check, use “用示例项目看看效果” on the home screen, or a clip you provide. If usage is still unclear, continue in the [first-clip Q&A](https://github.com/Ajit-ApTech/Apyclipy/discussions/128). Reproducible bugs still belong in Issues.
 
 ### Why is processing slow or using too much memory?
 
@@ -157,7 +157,7 @@ SELECT project_type, COUNT(*) FROM projects GROUP BY project_type;
 
 ### Where are known issues? How can I get help?
 
-Check [known issues](https://github.com/zhouxiaoka/autoclip/issues/96) and [release notes](https://github.com/zhouxiaoka/autoclip/releases) first. Feature ideas and how you use AutoClip go to [Discussions](https://github.com/zhouxiaoka/autoclip/discussions): [welcome and categories](https://github.com/zhouxiaoka/autoclip/discussions/127), [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128), and [ideas](https://github.com/zhouxiaoka/autoclip/discussions/129). Reproducible bugs go to Issues. The board rules are in the [community board](COMMUNITY_BOARD.md) (Chinese). If needed, send one email to [christine_zhouye@163.com](mailto:christine_zhouye@163.com) with:
+Check [known issues](https://github.com/Ajit-ApTech/Apyclipy/issues/96) and [release notes](https://github.com/Ajit-ApTech/Apyclipy/releases) first. Feature ideas and how you use AutoClip go to [Discussions](https://github.com/Ajit-ApTech/Apyclipy/discussions): [welcome and categories](https://github.com/Ajit-ApTech/Apyclipy/discussions/127), [first-clip Q&A](https://github.com/Ajit-ApTech/Apyclipy/discussions/128), and [ideas](https://github.com/Ajit-ApTech/Apyclipy/discussions/129). Reproducible bugs go to Issues. The board rules are in the [community board](COMMUNITY_BOARD.md) (Chinese). If needed, send one email to [christine_zhouye@163.com](mailto:christine_zhouye@163.com) with:
 
 - OS and CPU architecture, AutoClip version, and desktop / Docker / CLI mode.
 - Model provider and name, video source and approximate duration, and whether subtitles were supplied.

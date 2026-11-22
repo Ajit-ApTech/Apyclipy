@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO_URL = "https://github.com/zhouxiaoka/autoclip"
+REPO_URL = "https://github.com/Ajit-ApTech/Apyclipy"
 
 TAURI_CONF = ROOT / "src-tauri" / "tauri.conf.json"
 CARGO_TOML = ROOT / "src-tauri" / "Cargo.toml"

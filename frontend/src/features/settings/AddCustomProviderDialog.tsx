@@ -23,20 +23,20 @@ import {
 } from './customProvider'
 
 const TYPE_LABEL: Record<ModelType, string> = {
-  language: '语言',
-  asr: '语音识别',
-  tts: '语音合成',
-  image: '图像生成',
-  music: '音乐',
-  video: '视频',
+  language: 'Language / Text',
+  asr: 'Speech Recognition (ASR)',
+  tts: 'Text to Speech (TTS)',
+  image: 'Image Generation',
+  music: 'Music Generation',
+  video: 'Video Generation',
 }
 
 const ISSUE_COPY = {
-  name: '请填写服务商名称',
-  url: '请填写接口地址',
-  models: '请至少启用一个模型',
-  model_id: '请输入模型 ID',
-  duplicate: '该模型 ID 已在列表中。',
+  name: 'Please enter provider name',
+  url: 'Please enter API endpoint URL',
+  models: 'Please enable at least one model',
+  model_id: 'Please enter model ID',
+  duplicate: 'This model ID is already in the list.',
 } as const
 
 /**

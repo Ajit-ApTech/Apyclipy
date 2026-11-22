@@ -29,17 +29,17 @@ export function trialLines(result: TrialResultLike | null | undefined): TrialLin
     {
       key: 'context',
       tone: contextOk ? 'ok' : 'fail',
-      label: contextOk ? '上下文 ✓' : '上下文 ✗',
+      label: contextOk ? 'Context window ✓' : 'Context window ✗',
     },
     {
       key: 'rate',
       tone: rateLimited ? 'warn' : 'ok',
-      label: rateLimited ? '速率 ⚠（出现限流，长视频建议降并发）' : '速率 ✓',
+      label: rateLimited ? 'Rate limit ⚠ (Rate limiting detected)' : 'Rate limit ✓',
     },
     {
       key: 'json',
       tone: jsonOk ? 'ok' : 'fail',
-      label: jsonOk ? '输出格式 ✓' : '输出格式 ✗',
+      label: jsonOk ? 'Output format ✓' : 'Output format ✗',
     },
   ]
 }
@@ -49,8 +49,7 @@ export function trialEstimateCopy(result: TrialResultLike | null | undefined): s
   const n = result.trial_estimate_requests
   const m = result.trial_estimate_minutes
   if (typeof n !== 'number' || typeof m !== 'number') return ''
-  // Concrete Chinese string remains the i18n key fallback when templates are missing.
-  return `预计 30 分钟素材约需 ${n} 次请求、约 ${m} 分钟`
+  return `Estimated for 30m media: ~${n} requests, ~${m} min`
 }
 
 export function trialEstimateParts(result: TrialResultLike | null | undefined): { n: number; m: number } | null {

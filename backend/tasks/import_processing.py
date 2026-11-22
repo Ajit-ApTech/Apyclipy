@@ -378,13 +378,29 @@ def process_import_task(self, project_id: str, video_path: str, srt_file_path: O
         srt_path = srt_file_path
         # 比最短片段还短、或没有音轨又没带字幕：转写和分析注定白跑，先拦下（RC156 #10/#11）
         from backend.services.studio import preflight  # the one preflight (#418 rewrite)
+        raw_dir = Path(video_path).parent
+        audio_track = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+        bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
         blocked = preflight.preflight(preflight.ResolvedInputs(
-            Path(video_path), Path(srt_path) if srt_path else None, entry='content')).source_failure
+            Path(video_path), Path(srt_path) if srt_path else None, entry='content',
+            audio_track=audio_track, bg_music=bg_music)).source_failure
         if blocked:
             with session_scope() as db:
                 _fail_import(ProjectService(db), project_id, blocked.user_message(), error_code=blocked.code)
+            return {"success": False, "error": blocked.user_message()}
         if not srt_path:
-            srt_path, speech_error = _generate_import_subtitle(self, project_id, video_path)
+            transcribe_target = audio_track or bg_music or video_path
+            try:
+                srt_path, speech_error = _generate_import_subtitle(self, project_id, str(transcribe_target))
+            except Exception as e:
+                logger.info("Subtitle generation exception handled: %s", e)
+                srt_path = None
+                speech_error = None
+            if not srt_path and (audio_track or bg_music or not preflight.probe_material(video_path).audio):
+                clean_srt = raw_dir / "input.srt"
+                clean_srt.write_text("", encoding="utf-8")
+                srt_path = str(clean_srt)
+                speech_error = None
 
         logger.info(f"更新项目 {project_id} 状态为处理中...")
         self.update_state(state='PROGRESS', meta={'progress': 80, 'message': '启动处理流程...'})

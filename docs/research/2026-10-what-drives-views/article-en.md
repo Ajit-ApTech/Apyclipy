@@ -16,7 +16,7 @@ lang: en
 
 ## 1. Why we did this
 
-AutoClip is an open-source tool that cuts long videos (interviews, podcasts, talks) into short clips ([github.com/zhouxiaoka/autoclip](https://github.com/zhouxiaoka/autoclip)). Every clipping tool, ours included, is tempted to compete on effects: auto-zooms, animated captions, emoji, sound effects, templates. These are easy to demo and to screenshot.
+AutoClip is an open-source tool that cuts long videos (interviews, podcasts, talks) into short clips ([github.com/Ajit-ApTech/Apyclipy](https://github.com/Ajit-ApTech/Apyclipy)). Every clipping tool, ours included, is tempted to compete on effects: auto-zooms, animated captions, emoji, sound effects, templates. These are easy to demo and to screenshot.
 
 Before we spent another quarter on templates, we wanted to know which of those things actually move views, and which are just *craft*: what competent channels do whether or not a clip takes off. This note covers what we found, how we found it, what we changed, and what we still don't know.
 

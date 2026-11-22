@@ -2,8 +2,8 @@
 
 本文件不是测速脚本生成的报告，仓库里也没有对应的 `windows.json`。下面的表和机器信息照录自上述评论，待 Windows 验收机重跑后用脚本输出整文件替换。
 
-- https://github.com/zhouxiaoka/autoclip/pull/314#issuecomment-6093245237
-- https://github.com/zhouxiaoka/autoclip/pull/314#issuecomment-6093609293
+- https://github.com/Ajit-ApTech/Apyclipy/pull/314#issuecomment-6093245237
+- https://github.com/Ajit-ApTech/Apyclipy/pull/314#issuecomment-6093609293
 
 ## 评论 6093245237
 

@@ -1,13 +1,13 @@
 # 开发者指南
 
-项目仓库：[zhouxiaoka/autoclip](https://github.com/zhouxiaoka/autoclip)。目录、维护入口与旧文件处理见 [仓库说明](REPOSITORY_LAYOUT.md)。
+项目仓库：[Ajit-ApTech/Apyclipy](https://github.com/Ajit-ApTech/Apyclipy)。目录、维护入口与旧文件处理见 [仓库说明](REPOSITORY_LAYOUT.md)。
 
 ## 环境与验证
 
 源码 Web 模式按 [STARTUP_GUIDE.md](../STARTUP_GUIDE.md) 准备 Python 3.11、Node.js 20 和 Redis。桌面模式使用 Tauri 和独立后端入口，打包流程以 [BUILD_GUIDE.md](../BUILD_GUIDE.md) 与 [scripts/README.md](../scripts/README.md) 为准；不要套用 Web 模式的 Redis/Celery 启动命令。
 
 ```bash
-git clone https://github.com/zhouxiaoka/autoclip.git
+git clone https://github.com/Ajit-ApTech/Apyclipy.git
 cd autoclip
 python3 -m venv venv
 source venv/bin/activate

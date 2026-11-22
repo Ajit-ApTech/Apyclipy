@@ -131,7 +131,7 @@ const ProjectDetailPage: React.FC = () => {
       if (version !== loadVersion.current) return
       setError(errorText(err))
     } finally {
-      if (version === loadVersion.current) setLoading(false)
+      setLoading(false)
     }
   }
 

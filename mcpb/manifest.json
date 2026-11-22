@@ -11,11 +11,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhouxiaoka/autoclip"
+    "url": "https://github.com/Ajit-ApTech/Apyclipy"
   },
-  "homepage": "https://zhouxiaoka.github.io/autoclip_intro/",
-  "documentation": "https://github.com/zhouxiaoka/autoclip/blob/main/docs/CLI_AND_MCP.md",
-  "support": "https://github.com/zhouxiaoka/autoclip/issues",
+  "homepage": "https://ajit-aptech.github.io/Apyclipy/",
+  "documentation": "https://github.com/Ajit-ApTech/Apyclipy/blob/main/docs/CLI_AND_MCP.md",
+  "support": "https://github.com/Ajit-ApTech/Apyclipy/issues",
   "icon": "icon.png",
   "server": {
     "type": "python",

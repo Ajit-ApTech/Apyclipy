@@ -12,7 +12,7 @@ import {
 import { analysisUsesWeakLocalTimelineModel } from './weakLocalTimeline'
 import WeakLocalTimelineNote from './WeakLocalTimelineNote'
 
-const SMART_HINT = '记下这个型号，只绑定这一家服务商。换服务商请用下面的固定选项。'
+const SMART_HINT = 'Remember this model; bound to this provider only. To switch providers, use the options below.'
 
 function lineText(line: SlotLine): string {
   if (line.kind === 'off') return t('关闭 · 使用视频帧')

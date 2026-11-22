@@ -43,7 +43,7 @@ export function localModelSizeLabel(
     const rounded = Number.isInteger(params) ? String(params) : String(params)
     parts.push(`${rounded}B`)
   } else if (provider === 'lmstudio') {
-    parts.push('未知')
+    parts.push('Unknown')
   }
   if (typeof model.context_tokens === 'number') {
     const k = model.context_tokens >= 1024
@@ -51,17 +51,17 @@ export function localModelSizeLabel(
       : String(model.context_tokens)
     parts.push(`ctx ${k}`)
   } else if (provider === 'lmstudio' && typeof model.params_b !== 'number') {
-    // already 「未知」 for params; skip duplicate
+    // already 'Unknown' for params; skip duplicate
   } else if (provider === 'lmstudio') {
-    parts.push('ctx 未知')
+    parts.push('ctx Unknown')
   }
   return parts.join(' · ')
 }
 
 export function localAnalysisWarnCopy(): string {
-  return '大概率解析失败，不建议做分析'
+  return 'High risk of parsing failure; not recommended for analysis'
 }
 
 export function localRecommendCopy(): string {
-  return '推荐 qwen2.5:7b / 14b（中文）或 llama3.1:8b'
+  return 'Recommended: llama3.1:8b or qwen2.5:7b / 14b'
 }

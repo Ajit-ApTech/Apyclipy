@@ -7,7 +7,7 @@ export type PackArtifact = 'combined' | 'cover_3x4'
 
 /** Credit line pasted with the combined action. The plain copy button does not use this. */
 export function captionWithCredit(caption: string, strategyId: string): string {
-  const credit = `${ENGLISH.has(strategyId) ? 'Made with AutoClip' : t('用 AutoClip 剪的')} · ${REPO_URL}`
+  const credit = `Made with Apyclipy · ${REPO_URL}`
   return caption ? `${caption}\n\n${credit}` : credit
 }
 

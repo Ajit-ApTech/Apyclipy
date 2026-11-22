@@ -6,8 +6,8 @@
 
 | Environment | Recommended option |
 | --- | --- |
-| macOS · Apple Silicon (M series) | [Desktop download](https://github.com/zhouxiaoka/autoclip/releases/latest): choose the `.dmg` containing `aarch64` |
-| Windows 10 / 11 · x64 | [Desktop download](https://github.com/zhouxiaoka/autoclip/releases/latest): choose the installer containing `x64-setup.exe` |
+| macOS · Apple Silicon (M series) | [Desktop download](https://github.com/Ajit-ApTech/Apyclipy/releases/latest): choose the `.dmg` containing `aarch64` |
+| Windows 10 / 11 · x64 | [Desktop download](https://github.com/Ajit-ApTech/Apyclipy/releases/latest): choose the installer containing `x64-setup.exe` |
 | Intel Mac / Linux / self-hosted server | No desktop build yet. Use [Docker](DOCKER.en.md) or the [CLI](CLI_AND_MCP.md) (CLI reference in Chinese) |
 
 Check the actual assets and requirements on the release page. `Source code` archives are not application installers. Desktop installers include Python and FFmpeg; local language models, speech recognition components, and model files need separate setup.
@@ -44,7 +44,7 @@ Then use a short video you are allowed to use:
 - Prefer an accurately timed `.srt`. When there are no subtitles, or local Whisper will not install or is too slow, switch to Bailian cloud transcription as described above. The audio is uploaded to the cloud.
 - Use a local file or Bilibili. Confirm that you have the right to use the media.
 
-Common sticking points on a first run are in [Discussion #128](https://github.com/zhouxiaoka/autoclip/discussions/128).
+Common sticking points on a first run are in [Discussion #128](https://github.com/Ajit-ApTech/Apyclipy/discussions/128).
 
 ## Cloud and local models
 
@@ -58,7 +58,7 @@ Local presets do not require a cloud API key, but inference uses your hardware. 
 
 ## Updates and backups
 
-Finish or stop active jobs and exit the app. Back up your data directory, then download the new installer from [Releases](https://github.com/zhouxiaoka/autoclip/releases/latest). Users on v1.3.0 or earlier must install v1.3.1 manually. From v1.3.1 onward, use Settings → Application → Check for updates for future releases; installation and restart require your confirmation. Startup checks remind at most once a day for the same version and can be turned off in Settings or the reminder. Manual checks remain available.
+Finish or stop active jobs and exit the app. Back up your data directory, then download the new installer from [Releases](https://github.com/Ajit-ApTech/Apyclipy/releases/latest). Users on v1.3.0 or earlier must install v1.3.1 manually. From v1.3.1 onward, use Settings → Application → Check for updates for future releases; installation and restart require your confirmation. Startup checks remind at most once a day for the same version and can be turned off in Settings or the reminder. Manual checks remain available.
 
 Default desktop data directories:
 
@@ -72,7 +72,7 @@ If you set `--data-dir` / `AUTOCLIP_DATA_DIR`, use that directory instead. Logs 
 
 ## Help
 
-Check the [FAQ](FAQ.en.md) and [known issues](https://github.com/zhouxiaoka/autoclip/issues/96) first. If the first clip is stuck (model, no subtitles, or OS warnings), continue in the [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128). See [welcome and categories](https://github.com/zhouxiaoka/autoclip/discussions/127). If the problem remains, email your OS, application version, model, failed stage, reproduction steps, and sanitized logs.
+Check the [FAQ](FAQ.en.md) and [known issues](https://github.com/Ajit-ApTech/Apyclipy/issues/96) first. If the first clip is stuck (model, no subtitles, or OS warnings), continue in the [first-clip Q&A](https://github.com/Ajit-ApTech/Apyclipy/discussions/128). See [welcome and categories](https://github.com/Ajit-ApTech/Apyclipy/discussions/127). If the problem remains, email your OS, application version, model, failed stage, reproduction steps, and sanitized logs.
 
 Maintained by an individual in their spare time. Response times vary; live support and one-to-one deployment assistance are not provided.
 

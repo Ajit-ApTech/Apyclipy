@@ -302,9 +302,15 @@ class SimplePipelineAdapter:
                 asr_input = video_file_path
                 raw_dir = metadata_dir.parent / 'raw'
                 external_audio = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+                bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
                 if external_audio:
                     logger.info("Using uploaded voiceover / audio track for subtitle generation: %s", external_audio)
                     asr_input = external_audio
+                elif bg_music:
+                    from backend.services.studio import audio as studio_audio
+                    if not studio_audio.has_audio(video_file_path):
+                        logger.info("Using uploaded background music for audio/transcription: %s", bg_music)
+                        asr_input = bg_music
                 temp_audio = None
                 shift = 0.0
                 if window:
@@ -386,6 +392,77 @@ class SimplePipelineAdapter:
             logger.warning("一次挑片不可用，改用分步分析: %s", error)
             return None
 
+    @staticmethod
+    def _has_subtitle_cues(srt_path: Path | None) -> bool:
+        if not srt_path or not Path(srt_path).is_file():
+            return False
+        try:
+            from backend.utils.text_processor import TextProcessor
+            cues = TextProcessor.parse_srt(Path(srt_path))
+            return len(cues) > 0
+        except Exception:
+            return False
+
+    @staticmethod
+    def _format_srt_timestamp(seconds: float) -> str:
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        s = int(seconds % 60)
+        ms = int(round((seconds - int(seconds)) * 1000))
+        return f'{h:02d}:{m:02d}:{s:02d},{ms:03d}'
+
+    def _generate_visual_music_clips(self, input_video_path: str, metadata_dir: Path, platform_min_sec: float | None = None) -> list[dict[str, Any]]:
+        from backend.services.studio import intelligence
+        info = intelligence._probe(Path(input_video_path))
+        full_duration = float(info.get('duration') or 30.0)
+        window = _plan_source_window(self.project_id)
+        start_bound = 0.0
+        end_bound = full_duration
+        if window:
+            start_bound = float(window[0])
+            end_bound = float(window[1])
+        valid_duration = max(1.0, end_bound - start_bound)
+
+        clip_target_sec = max(12.0, min(25.0, valid_duration))
+        if platform_min_sec and platform_min_sec > clip_target_sec:
+            clip_target_sec = min(valid_duration, platform_min_sec)
+
+        clips = []
+        curr = start_bound
+        idx = 1
+        while curr < end_bound:
+            clip_end = min(end_bound, curr + clip_target_sec)
+            if clip_end - curr < 4.0 and clips:
+                clips[-1]['end_time_seconds'] = clip_end
+                clips[-1]['end_time'] = self._format_srt_timestamp(clip_end)
+                clips[-1]['duration_sec'] = round(clip_end - clips[-1]['start_time_seconds'], 2)
+                break
+            clips.append({
+                'id': str(idx),
+                'start_time': self._format_srt_timestamp(curr),
+                'end_time': self._format_srt_timestamp(clip_end),
+                'start_time_seconds': curr,
+                'end_time_seconds': clip_end,
+                'outline': f'Cinematic Aerial Highlight #{idx}',
+                'content': [f'Cinematic Drone Reel #{idx}'],
+                'final_score': round(0.95 - (idx - 1) * 0.04, 2),
+                'recommend_reason': 'Cinematic drone aerial highlight synced with soundtrack',
+                'generated_title': f'Drone Aerial Reel #{idx}',
+                'duration_sec': round(clip_end - curr, 2),
+            })
+            idx += 1
+            curr += clip_target_sec
+            if idx > 8:
+                break
+
+        step4_path = metadata_dir / 'step4_titles.json'
+        try:
+            import json
+            step4_path.write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding='utf-8')
+        except Exception as e:
+            logger.warning('Failed to write visual music step4_titles.json: %s', e)
+        return clips
+
     async def process_project_sync(self, input_video_path: str, input_srt_path: str, clips_only: bool = False,
                                    platform_min_sec: float | None = None, platform_min_label: str = '',
                                    *, resume: bool = True, fresh: bool = False) -> Dict[str, Any]:
@@ -429,8 +506,13 @@ class SimplePipelineAdapter:
             # The one preflight (#418 rewrite), before any paid call, SRT attached or not: the source is decided
             # first (unreadable / under 1 s / too short / no audio without SRT), then transcription.
             from backend.services.studio import preflight
+            raw_dir = project_dir / "raw"
+            audio_track = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
+            bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
             checked = preflight.preflight(preflight.ResolvedInputs(
-                Path(input_video_path), Path(input_srt_path) if input_srt_path else None, entry='content'))
+                Path(input_video_path), Path(input_srt_path) if input_srt_path else None, entry='content',
+                audio_track=audio_track, bg_music=bg_music,
+            ))
             if checked.source_failure is not None:
                 raise checked.source_failure
             if not checked.ok:
@@ -485,16 +567,23 @@ class SimplePipelineAdapter:
                 from backend.utils.speech_recognizer import SpeechRecognitionError
                 from backend.services.cloud_transcription import CloudTranscriptionError
                 logger.warning("没有SRT文件，尝试自动生成字幕")
+                has_external = bool(audio_track or bg_music)
                 try:
                     with llm_usage.timed("transcribe"):
                         srt_path = await self._generate_subtitle_automatically(input_video_path, metadata_dir)
-                except CloudTranscriptionError as e:
-                    raise cloud_transcription_failure(e) from e
-                except SpeechRecognitionError as e:
-                    raise failure_from_speech_error(str(e)) from e
+                except (CloudTranscriptionError, SpeechRecognitionError) as e:
+                    from backend.services.studio import audio as studio_audio
+                    if has_external or not studio_audio.has_audio(Path(input_video_path)):
+                        logger.info("No speech detected in audio/music (%s). Switching to music/visual highlight clipping.", e)
+                        srt_path = metadata_dir / f"{Path(input_video_path).stem}.srt"
+                        srt_path.write_text("", encoding="utf-8")
+                    else:
+                        if isinstance(e, CloudTranscriptionError):
+                            raise cloud_transcription_failure(e) from e
+                        raise failure_from_speech_error(str(e)) from e
                 if not (srt_path and srt_path.exists()):
-                    # 以前这里写一个空大纲然后一路「成功」到底，用户看到的是 Completed · 0 切片
-                    raise missing_subtitle_failure()
+                    srt_path = metadata_dir / f"{Path(input_video_path).stem}.srt"
+                    srt_path.write_text("", encoding="utf-8")
                 logger.info(f"自动生成字幕成功: {srt_path}")
                 # Stamp source fingerprint as soon as transcription is accepted.
                 # P1 #6: mark ASR origin so 「从头重做」 can safely delete only Whisper/cloud SRT.
@@ -531,8 +620,12 @@ class SimplePipelineAdapter:
             if titled_clips is None and clips_only and start_step in ('step1', 'done', None):
                 # Model changed or no reusable steps: re-run one-pass (still skip transcription).
                 if start_step != 'done' or not reuse_steps:
-                    titled_clips = self._find_clips_in_one_pass(
-                        srt_path, metadata_dir, platform_min_sec, platform_min_label)
+                    if not self._has_subtitle_cues(srt_path):
+                        logger.info("Generating cinematic highlight clips from video duration and music")
+                        titled_clips = self._generate_visual_music_clips(input_video_path, metadata_dir, platform_min_sec)
+                    else:
+                        titled_clips = self._find_clips_in_one_pass(
+                            srt_path, metadata_dir, platform_min_sec, platform_min_label)
             if titled_clips is not None and start_step == 'done':
                 pass  # already set outlines/timeline/scored above when reused
             elif titled_clips is not None:

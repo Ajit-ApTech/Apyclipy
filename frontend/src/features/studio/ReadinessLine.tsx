@@ -16,13 +16,9 @@ function markGlyph(mark: ReadinessLineItem['mark']): string {
   return '—'
 }
 
-function fixLabel(repair: RepairAction, key: ReadinessLineItem['key']): string {
-  if (repair === 'install_whisper') return t('一键修复')
-  if (repair === 'settings_ai') return t('去设置')
-  if (repair === 'settings_transcription') return t('去设置')
-  if (repair === 'settings_vision') return t('去设置')
-  if (key === 'ffmpeg') return t('去设置')
-  return t('去设置')
+function fixLabel(repair: RepairAction, _key: ReadinessLineItem['key']): string {
+  if (repair === 'install_whisper') return 'Fix Now'
+  return 'Settings'
 }
 
 /**
