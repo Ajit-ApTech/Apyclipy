@@ -897,6 +897,66 @@ def _content_drafts(project_id, plan, video, platforms=()):
     """Create drafts once from the selected content route, before platform derivation."""
     route = plan.get('recommended_analysis', 'subtitle')
     prefs = Preferences.model_validate(plan['preferences'])
+
+    # Multi-clip imported projects: construct master montage and individual shot drafts directly
+    multi_clips = (plan.get('overrides') or {}).get('multi_clips')
+    if not multi_clips:
+        try:
+            st = store.recover(project_id)
+            multi_clips = (st.get('smart_import') or {}).get('multi_clips') or (st.get('generation') or {}).get('multi_clips')
+        except Exception:
+            multi_clips = None
+    if not multi_clips:
+        try:
+            from backend.core.database import SessionLocal
+            from backend.models.project import Project
+            with SessionLocal() as db_sess:
+                db_proj = db_sess.query(Project).filter(Project.id == project_id).first()
+                if db_proj and db_proj.settings:
+                    multi_clips = db_proj.settings.get('multi_clips')
+        except Exception:
+            multi_clips = None
+
+    if multi_clips and len(multi_clips) >= 2:
+        source_duration = float(intelligence._probe(video).get('duration') or 0)
+        scenes = [
+            Scene(
+                id=uuid.uuid4().hex,
+                label=f"Clip {i+1}: {c.get('filename', f'Shot {i+1}')}",
+                start=float(c.get('start', 0.0)),
+                end=min(float(c.get('end', 0.0)), source_duration) if source_duration else float(c.get('end', 0.0)),
+                evidence=f"Imported shot {i+1}"
+            )
+            for i, c in enumerate(multi_clips)
+        ]
+        is_drone = any('dji' in str(c.get('filename','')).lower() or 'drone' in str(c.get('filename','')).lower() or 'avata' in str(c.get('filename','')).lower() for c in multi_clips)
+        montage_title = 'Cinematic Drone Montage' if is_drone else 'Multi-Clip Cinematic Reel'
+        has_sub = _project_has_subtitle(project_id)
+        master_draft = {**Draft(
+            id=uuid.uuid4().hex,
+            title=montage_title,
+            scenes=scenes,
+            origin='auto-content',
+            language=prefs.language,
+            aspect=prefs.aspect,
+            layout='crop' if prefs.aspect == 'portrait' else 'fit',
+            subtitles=has_sub,
+            transition='fade',
+        ).model_dump(), SCORE_KEY: 1.0}
+        individual_drafts = [
+            {**Draft(
+                id=uuid.uuid4().hex,
+                title=f"Shot {i+1}: {c.get('filename', f'Shot {i+1}')}",
+                scenes=[sc],
+                origin='auto-content',
+                language=prefs.language,
+                aspect=prefs.aspect,
+                layout='crop' if prefs.aspect == 'portrait' else 'fit',
+                subtitles=has_sub,
+            ).model_dump(), SCORE_KEY: round(0.95 - i * 0.02, 2)}
+            for i, (c, sc) in enumerate(zip(multi_clips, scenes))
+        ]
+        return [master_draft, *individual_drafts]
     if route == 'subtitle' or prefs.goal == 'content':
         from backend.services.platform_strategy import long_form_minimum
         min_sec, label = long_form_minimum(platforms)

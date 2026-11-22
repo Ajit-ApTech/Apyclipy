@@ -256,6 +256,7 @@ async def import_visual(
     url: Optional[str] = Form(None),
     browser: Optional[Literal['chrome', 'edge', 'firefox', 'safari']] = Form(None),
     video: Optional[UploadFile] = File(None),
+    videos: list[UploadFile] = File(default=[]),
     source_window_start: Optional[float] = Form(None, ge=0),
     source_window_end: Optional[float] = Form(None, gt=0),
     max_clips: Optional[int] = Form(None, ge=1, le=50),
@@ -263,8 +264,12 @@ async def import_visual(
     features: str = Form(''),
     db: Session = Depends(get_db),
 ):
-    if bool(url) == bool(video):
-        raise HTTPException(422, 'Please provide a video link or upload a video file')
+    valid_videos = [v for v in videos if v and getattr(v, 'filename', None)]
+    if not valid_videos and video and getattr(video, 'filename', None):
+        valid_videos = [video]
+
+    if bool(url) == bool(valid_videos):
+        raise HTTPException(422, 'Please provide a video link or upload video file(s)')
     from backend.services.studio import readiness
     call(readiness.ensure_analysis_usable)
     if url:
@@ -272,13 +277,10 @@ async def import_visual(
         host = (parsed.hostname or '').lower()
         if parsed.scheme != 'https' or parsed.username or parsed.password or not any(host == d or host.endswith('.' + d) for d in ('youtube.com', 'youtu.be', 'bilibili.com', 'b23.tv')):
             raise HTTPException(422, 'Only HTTPS YouTube or Bilibili links are supported')
-    ext = Path(video.filename or '').suffix.lower() if video else '.mp4'
-    if ext not in ('.mp4', '.mov', '.mkv', '.webm', '.avi'):
-        raise HTTPException(422, 'Unsupported video format')
-    first_chunk = await video.read(1024 * 1024) if video else None
-    if video and not first_chunk:
-        await video.close()
-        raise HTTPException(422, 'Video file is empty, please select another file')
+    for v in valid_videos:
+        v_ext = Path(v.filename or '').suffix.lower()
+        if v_ext not in ('.mp4', '.mov', '.mkv', '.webm', '.avi'):
+            raise HTTPException(422, f'Unsupported video format: {v.filename}')
     subtitle_bytes = None
     if subtitle:
         try:
@@ -313,13 +315,42 @@ async def import_visual(
                 raise HTTPException(422, 'Background music file is empty or exceeds 50 MB')
         finally:
             await bg_music.close()
-    staged = None
-    if video:
-        has_external = bool(audio_track_bytes is not None or bg_music_bytes is not None)
+    staged_list: list[Path] = []
+    if valid_videos:
+        for v in valid_videos:
+            first_chunk = await v.read(1024 * 1024)
+            if not first_chunk:
+                await v.close()
+                for sp in staged_list:
+                    sp.unlink(missing_ok=True)
+                raise HTTPException(422, f'Video file is empty: {v.filename}')
+            v_ext = Path(v.filename or '').suffix.lower() or '.mp4'
+            try:
+                staged_path = await stage_upload(v, first_chunk, v_ext)
+                staged_list.append(staged_path)
+            except BaseException:
+                for sp in staged_list:
+                    sp.unlink(missing_ok=True)
+                raise
+        has_external = bool(audio_track_bytes is not None or bg_music_bytes is not None or len(valid_videos) > 1)
         try:
-            staged = await _stage_for_gate(video, first_chunk, ext, srt_available=subtitle_bytes is not None, goal=goal, has_external_audio=has_external)
+            from backend.api.v1 import transcription_gate
+            from backend.services.studio import preflight
+            test_audio = staged_list[0].with_suffix('.mp3') if has_external else None
+            if test_audio:
+                test_audio.write_bytes(b'')
+            await transcription_gate.run(preflight.ResolvedInputs(
+                staged_list[0],
+                subtitle=staged_list[0].with_suffix('.srt') if subtitle_bytes is not None else None,
+                entry='studio',
+                goal=goal,
+                audio_track=test_audio
+            ))
+            if test_audio:
+                test_audio.unlink(missing_ok=True)
         except HTTPException:
-            await video.close()
+            for sp in staged_list:
+                sp.unlink(missing_ok=True)
             raise
     try:
         source_window = None
@@ -372,23 +403,35 @@ async def import_visual(
             (raw / f'audio_track{audio_track_ext}').write_bytes(audio_track_bytes)
         if bg_music_bytes is not None:
             (raw / f'bg_music{bg_music_ext}').write_bytes(bg_music_bytes)
-        if video:
-            path = raw / ('input' + ext)
-            if staged is not None:
-                import shutil
-                shutil.move(str(staged), str(path))
+        if staged_list:
+            import shutil
+            clip_boundaries = []
+            if len(staged_list) == 1:
+                staged_single = staged_list[0]
+                v_ext = staged_single.suffix.lower() or '.mp4'
+                target_video = raw / ('input' + v_ext)
+                shutil.move(str(staged_single), str(target_video))
+                project.video_path = str(target_video)
             else:
-                with path.open('wb') as target:
-                    target.write(first_chunk)
-                    while chunk := await video.read(1024 * 1024):
-                        target.write(chunk)
-            project.video_path = str(path)
+                parts_dir = raw / 'parts'
+                parts_dir.mkdir(parents=True, exist_ok=True)
+                moved_parts = []
+                for idx, (staged_p, v_obj) in enumerate(zip(staged_list, valid_videos)):
+                    orig_name = Path(v_obj.filename or f'clip_{idx:02d}.mp4').name
+                    part_dest = parts_dir / f"clip_{idx:02d}_{orig_name}"
+                    shutil.move(str(staged_p), str(part_dest))
+                    moved_parts.append(part_dest)
+                final_input = raw / 'input.mp4'
+                from backend.services.studio.media_concat import concatenate_video_clips
+                clip_boundaries = concatenate_video_clips(moved_parts, final_input)
+                project.video_path = str(final_input)
+                settings_dict['multi_clips'] = clip_boundaries
+                project.settings = settings_dict
             db.commit()
             if subtitle_bytes is not None:
-                # P1 #6: user-attached SRT must survive 「从头重做」.
                 from backend.services.studio import pipeline_resume
                 pipeline_resume.record_srt_origin(
-                    store.directory(pid) / 'metadata', 'attached', video=path,
+                    store.directory(pid) / 'metadata', 'attached', video=Path(project.video_path),
                 )
         snapshot = None
         if features and len(features) <= 4000:
@@ -404,10 +447,10 @@ async def import_visual(
         db.commit()
         raise
     finally:
-        if staged is not None:
-            staged.unlink(missing_ok=True)  # no-op once moved into the project
-        if video:
-            await video.close()
+        for sp in staged_list:
+            sp.unlink(missing_ok=True)
+        for v in valid_videos:
+            await v.close()
     return {'project_id': pid, 'analysis_run_id': run_id}
 
 

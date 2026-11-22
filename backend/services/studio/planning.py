@@ -194,7 +194,8 @@ def _subtitle_blockers(video: Path, duration: float, options: ImportOptions, con
     from backend.pipeline import media_precheck
     from backend.services.studio import preflight
     srt_attached = (video.parent / 'input.srt').is_file()
-    external_audio_attached = any(
+    multi_clip_attached = (video.parent / 'parts').is_dir()
+    external_audio_attached = multi_clip_attached or any(
         (video.parent / f'audio_track{ext}').is_file() or (video.parent / f'bg_music{ext}').is_file()
         for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac')
     )
@@ -231,11 +232,8 @@ def _subtitle_blockers(video: Path, duration: float, options: ImportOptions, con
 
 
 def _require_local_transcription(video: Path, analysis_mode: str) -> None:
-    """Refuse a local/subtitle recommendation when ASR is still required.
-
-    An attached or platform ``input.srt`` is already a subtitle route, so it skips
-    the check. Visual mode does not need ASR; callers pass the saved analysis mode.
-    """
+    if (video.parent / 'parts').is_dir():
+        return
     from backend.services.studio import readiness
     readiness.require_transcription(
         stage='SUBTITLE',

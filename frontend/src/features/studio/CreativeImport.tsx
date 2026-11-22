@@ -142,7 +142,36 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     const incoming = reuse.current?.sourceUrl || reuse.current?.sourceMeta?.source_url
     return typeof incoming === 'string' ? incoming : ''
   })
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
+  const file = files[0] || null
+  const setFile = (f: File | null) => setFiles(f ? [f] : [])
+
+  const addFiles = (newFiles: File[]) => {
+    setFiles(prev => {
+      const existingSignatures = new Set(prev.map(item => `${item.name}-${item.size}-${item.lastModified}`))
+      const unique = newFiles.filter(item => !existingSignatures.has(`${item.name}-${item.size}-${item.lastModified}`))
+      return [...prev, ...unique]
+    })
+    setUrl('')
+    setSource('file')
+    clearPreview()
+  }
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const moveFile = (index: number, direction: 'up' | 'down') => {
+    setFiles(prev => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev
+      const next = [...prev]
+      const temp = next[index]
+      next[index] = next[targetIndex]
+      next[targetIndex] = temp
+      return next
+    })
+  }
   const [subtitle, setSubtitle] = useState<File | null>(null)
   const [audioTrack, setAudioTrack] = useState<File | null>(null)
   const [bgMusic, setBgMusic] = useState<File | null>(null)
@@ -334,12 +363,12 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     overridden.current = true
     trackAutoChoiceOverridden({ field: 'platform', stage: 'pre_import' }, true)
   }
-  const readyToStart = (trigger: 'paste' | 'drop' | 'button', next?: { url?: string; file?: File | null }, readiness: ImportReadiness | null = currentReadiness) => {
+  const readyToStart = (trigger: 'paste' | 'drop' | 'button', next?: { url?: string; file?: File | null; files?: File[] }, readiness: ImportReadiness | null = currentReadiness) => {
     if (blocked) { trackExperience('import_blocked', { reason: 'setup_required', placement: 'home_setup' }); setError("Please connect an AI model service before importing video."); onBlocked?.(); return false }
-    const nextFile = next && 'file' in next ? next.file : file
+    const nextFiles = next && 'files' in next ? (next.files || []) : (next && 'file' in next ? (next.file ? [next.file] : []) : files)
     const nextUrl = next?.url ?? url
-    const nextSource = next?.file ? 'file' : next?.url ? 'link' : source
-    if (nextSource === 'file' ? !nextFile : !nextUrl.trim()) { setError("Please provide a video file or online video URL."); return false }
+    const nextSource = (next?.files && next.files.length > 0) || next?.file ? 'file' : next?.url ? 'link' : source
+    if (nextSource === 'file' ? nextFiles.length === 0 : !nextUrl.trim()) { setError("Please provide a video file or online video URL."); return false }
     const reason = submissionBlock(readiness, !!subtitle, settled, { source: nextSource, allowLinkWithoutWhisper: allowLink })
     if (reason === 'pending') { setError(blockMessage(reason, readiness)); return false }
     trackAsrReadiness(asrReadinessProperties(readiness, !!subtitle))
@@ -402,19 +431,24 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     && !readiness?.checks?.transcription?.skippable
     && isRecoveryCode(readiness?.checks?.transcription?.code)
   )
-  const arm = (trigger: 'paste' | 'drop', next: { url?: string; file?: File }) => {
+  const arm = (trigger: 'paste' | 'drop', next: { url?: string; file?: File; files?: File[] }) => {
     // drop, global paste and the file picker all come through here; while a submit is running
     // (including its readiness re-check) the source is locked, so what is shown is what gets uploaded.
     if (starting.current) return
+    if (next.files && next.files.length > 0) {
+      setFiles(next.files); setUrl(''); setSource('file'); clearPreview()
+      if (analysisBlocked) return
+      return
+    }
     if (next.file) {
-      setFile(next.file); setUrl(''); setSource('file'); clearPreview()
+      setFiles([next.file]); setUrl(''); setSource('file'); clearPreview()
       if (analysisBlocked) return
       if (!shouldAutoStart(pasteFlag, trigger)) return
       if (!readyToStart(trigger, next)) return
       setPending({ trigger })
       return
     }
-    if (next.url) { setUrl(next.url); setFile(null); setSource('link') }
+    if (next.url) { setUrl(next.url); setFiles([]); setSource('link') }
     // The setup card owns the zone. Keep the material, but do not start or reopen the overlay.
     if (analysisBlocked) return
     // F4: inspect first; autostart countdown begins only after the preview card is ready.
@@ -515,9 +549,15 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
       body.append('auto_ducking', String(autoDucking))
       body.append('audio_sync_mode', audioSyncMode)
       body.append('audio_custom_start', String(audioCustomStart))
-      body.append('name', file && source === 'file' ? file.name.replace(/\.[^.]+$/, '') : "Apyclipy Smart Clip")
-      if (source === 'file' && file) body.append('video', file)
-      else { body.append('url', url.trim()); if (browser) body.append('browser', browser) }
+      const clipName = files.length > 1 ? `Reel (${files.length} Clips)` : (file ? file.name.replace(/\.[^.]+$/, '') : "Apyclipy Smart Clip")
+      body.append('name', source === 'file' ? clipName : "Apyclipy Smart Clip")
+      if (source === 'file' && files.length > 0) {
+        files.forEach(f => body.append('videos', f))
+        body.append('video', files[0])
+      } else {
+        body.append('url', url.trim())
+        if (browser) body.append('browser', browser)
+      }
       body.append('features', JSON.stringify(featureSnapshot()))
       body.append('flow_id', flowId)
       const skippedWhisper = allowLink && source !== 'file' && !!readiness && !readiness?.checks?.transcription?.ok && !subtitle
@@ -547,10 +587,165 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setDragging(false)
-    const dropped = [...event.dataTransfer.files].find(item => isVideoFile(item))
-    if (dropped) { arm('drop', { file: dropped }); return }
+    const dropped = [...event.dataTransfer.files].filter(item => isVideoFile(item))
+    if (dropped.length > 0) {
+      if (files.length > 0) {
+        addFiles(dropped)
+      } else {
+        arm('drop', { files: dropped })
+      }
+      return
+    }
     const text = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain')
     if (importUrlKind(text)) arm('paste', { url: text.trim() })
+  }
+
+  const renderMultiClipList = () => {
+    if (files.length === 0) return null
+    return (
+      <div className="studio-multi-clips-card" style={{
+        margin: '12px 0 16px',
+        padding: '14px',
+        background: 'var(--studio-surface, #f8fafc)',
+        border: '1px solid var(--studio-border, #e2e8f0)',
+        borderRadius: '10px',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🎬</span>
+              <span>{files.length} Video Clip{files.length > 1 ? 's' : ''} Selected</span>
+            </div>
+            <div className="studio-muted" style={{ fontSize: '12px', marginTop: '2px' }}>
+              {files.length > 1 
+                ? 'These clips will be merged sequentially into a reel with transitions.' 
+                : '1 clip ready. Add more drone/video clips below to make a multi-scene reel.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="studio-link"
+            disabled={busy}
+            onClick={() => setFiles([])}
+            style={{ fontSize: '12px', color: '#ef4444' }}
+          >
+            Clear All
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+          {files.map((f, idx) => (
+            <div key={`${f.name}-${idx}`} style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '6px 10px',
+              background: '#ffffff',
+              borderRadius: '6px',
+              border: '1px solid var(--studio-border, #e2e8f0)',
+              fontSize: '13px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                <span style={{
+                  background: '#4f46e5',
+                  color: '#ffffff',
+                  borderRadius: '4px',
+                  padding: '1px 6px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  flexShrink: 0
+                }}>
+                  #{idx + 1}
+                </span>
+                <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.name}>
+                  {f.name}
+                </span>
+                <span className="studio-muted" style={{ fontSize: '11px', flexShrink: 0 }}>
+                  ({(f.size / (1024 * 1024)).toFixed(1)} MB)
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0, marginLeft: '6px' }}>
+                <button
+                  type="button"
+                  disabled={busy || idx === 0}
+                  onClick={() => moveFile(idx, 'up')}
+                  title="Move Up"
+                  style={{
+                    padding: '2px 5px', fontSize: '11px', borderRadius: '4px',
+                    border: '1px solid #cbd5e1', background: idx === 0 ? '#f1f5f9' : '#ffffff',
+                    cursor: idx === 0 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || idx === files.length - 1}
+                  onClick={() => moveFile(idx, 'down')}
+                  title="Move Down"
+                  style={{
+                    padding: '2px 5px', fontSize: '11px', borderRadius: '4px',
+                    border: '1px solid #cbd5e1', background: idx === files.length - 1 ? '#f1f5f9' : '#ffffff',
+                    cursor: idx === files.length - 1 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => removeFile(idx)}
+                  title="Remove Clip"
+                  style={{
+                    padding: '2px 6px', fontSize: '11px', color: '#ef4444',
+                    background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <label style={{
+            cursor: busy ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: '6px',
+            border: '1px dashed #4f46e5',
+            color: '#4f46e5',
+            fontSize: '12px',
+            fontWeight: 600,
+            background: '#eef2ff'
+          }}>
+            <span>+ Add More Clips</span>
+            <input
+              type="file"
+              multiple
+              accept="video/mp4,video/webm,video/quicktime,.mkv,.avi"
+              disabled={busy}
+              style={{ display: 'none' }}
+              onChange={e => {
+                const picked = Array.from(e.target.files || [])
+                if (picked.length > 0) addFiles(picked)
+                e.target.value = ''
+              }}
+            />
+          </label>
+          {files.length > 1 && (
+            <span style={{ fontSize: '11px', color: '#059669', fontWeight: 500 }}>
+              ✓ Smooth transitions automatically enabled
+            </span>
+          )}
+        </div>
+      </div>
+    )
   }
   const names = platforms.map(platformLabel).join(uiLocale().toLowerCase().startsWith('zh') ? '、' : ', ')
   const youtubeLongOnlyTooShort = longGate.durationSec != null && longGate.durationSec < YOUTUBE_LONG_MIN_SEC && platforms.length > 0 && platforms.every(platform => platform === 'youtube_long')
@@ -584,19 +779,41 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
             disabled={busy}
           />
         </label>
-        {file && <p className="ac-dropzone-file"><span>{file.name}</span><button type="button" className="studio-link" disabled={busy} onClick={() => setFile(null)}>Remove</button></p>}
+        {renderMultiClipList()}
         <label className="studio-link ac-dropzone-file-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }} aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" x2="12" y1="3" y2="15" />
           </svg>
-          Select local video file
-          <input type="file" aria-label="Video file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={event => { const picked = event.target.files?.[0] || null; if (picked) arm('drop', { file: picked }) }}/>
+          Select local video file(s)
+          <input type="file" multiple aria-label="Video file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={event => { const picked = Array.from(event.target.files || []); if (picked.length > 0) { if (files.length > 0) addFiles(picked); else arm('drop', { files: picked }) }; event.target.value = '' }}/>
         </label>
       </div> : <>
         <div className="studio-row"><Segmented ariaLabel="Import source" value={source} onChange={v=>!busy&&setSource(v)} options={[{value:'link',label:'Link Import'},{value:'file',label:'File Import'}]}/></div>
-        {source==='link'?<label className="studio-field"><span className="studio-sr">Video Link</span><textarea placeholder="Paste YouTube or video link" value={url} onChange={e=>{ setPending(null); clearPreview(); setUrl(e.target.value) }} onBlur={e => { const value = e.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }} onPaste={event => { const text = event.clipboardData.getData('text'); if (importUrlKind(text) && shouldAutoStart(pasteFlag, 'paste')) { event.preventDefault(); arm('paste', { url: text.trim() }) } }} disabled={busy}/></label>:<label className="studio-file"><span>{file?.name || 'Select a video'}</span><input type="file" aria-label="Video file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={e=>{ const picked = e.target.files?.[0] || null; setFile(picked); if (picked) arm('drop', { file: picked }) }}/><small>MP4 / MOV / MKV / WEBM / AVI</small></label>}
+        {source==='link'?<label className="studio-field"><span className="studio-sr">Video Link</span><textarea placeholder="Paste YouTube or video link" value={url} onChange={e=>{ setPending(null); clearPreview(); setUrl(e.target.value) }} onBlur={e => { const value = e.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }} onPaste={event => { const text = event.clipboardData.getData('text'); if (importUrlKind(text) && shouldAutoStart(pasteFlag, 'paste')) { event.preventDefault(); arm('paste', { url: text.trim() }) } }} disabled={busy}/></label>:(
+          <div>
+            {files.length === 0 ? (
+              <label className="studio-file">
+                <span>Select video clip(s)</span>
+                <input
+                  type="file"
+                  multiple
+                  aria-label="Video file"
+                  accept="video/mp4,video/webm,video/quicktime,.mkv,.avi"
+                  disabled={busy}
+                  onChange={e => {
+                    const picked = Array.from(e.target.files || [])
+                    if (picked.length > 0) arm('drop', { files: picked })
+                  }}
+                />
+                <small>Select 1 video or multiple video clips to combine into a reel (MP4 / MOV / MKV / WEBM / AVI)</small>
+              </label>
+            ) : (
+              renderMultiClipList()
+            )}
+          </div>
+        )}
       </>}
       {templatesOn && visualOn && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <StyleProbeLine sourceKey={source === 'file' ? (file ? `file:${file.name}:${file.size}:${file.lastModified}` : null) : (url.trim() ? `url:${url.trim()}` : null)} />}
       {remembered ? <div className="ac-platform-line"><p>Producing for {names}</p><button type="button" className="studio-link" disabled={busy} onClick={() => setPlatformOpen(open => !open)}>Change</button></div> : null}

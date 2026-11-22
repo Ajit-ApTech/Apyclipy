@@ -90,8 +90,15 @@ class ResolvedInputs:
 
     @property
     def audio_available(self) -> bool:
+        has_parts = False
+        try:
+            if self.video:
+                has_parts = (Path(self.video).parent / 'parts').is_dir()
+        except Exception:
+            pass
         return bool(
-            (self.audio_track and Path(self.audio_track).is_file())
+            has_parts
+            or (self.audio_track and Path(self.audio_track).is_file())
             or (self.bg_music and Path(self.bg_music).is_file())
         )
 
