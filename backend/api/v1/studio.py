@@ -385,8 +385,8 @@ async def import_visual(
         }
         project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or 'Apyclipy Smart Clip', project_type=ProjectType.DEFAULT, source_url=url, settings=settings_dict))
     except BaseException:
-        if staged is not None:
-            staged.unlink(missing_ok=True)
+        for sp in staged_list:
+            sp.unlink(missing_ok=True)
         raise
     pid = str(project.id)
     try:
@@ -395,7 +395,7 @@ async def import_visual(
         raw.mkdir(parents=True, exist_ok=True)
         if subtitle_bytes is not None:
             (raw / 'input.srt').write_bytes(subtitle_bytes)
-            if not video:
+            if not staged_list:
                 # Upload carried an SRT but no local video yet (URL path); still stamp origin.
                 from backend.services.studio import pipeline_resume
                 pipeline_resume.record_srt_origin(store.directory(pid) / 'metadata', 'attached')
