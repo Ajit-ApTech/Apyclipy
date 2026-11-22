@@ -187,6 +187,7 @@ class Draft(BaseModel):
     subtitles: bool = True
     subtitle_style: Literal['clean', 'bold', 'box', 'accent'] = 'clean'
     original_audio: bool = True
+    transition: Literal['fade', 'wipeleft', 'slideleft', 'dissolve', 'none'] = 'fade'
     revision: int = Field(default=1, ge=1)
     updated_at: str = ''
     origin: str = 'manual'

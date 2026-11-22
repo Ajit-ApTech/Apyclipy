@@ -70,6 +70,7 @@ export interface Draft {
   crop_x?: number; title_style?: 'plain' | 'impact' | 'card' | 'comic' | 'neon' | 'arena' | 'editorial' | 'pixel' | 'frosted'
   title_template_version?: 1 | 2 | 3 | 4 | 5 | 6; title_motion?: boolean; title_scale?: number; title_y?: number; title_accent?: string | null
   subtitles: boolean; subtitle_style?: SubtitleStyle; original_audio: boolean; revision: number; updated_at: string; origin: string
+  transition?: 'fade' | 'wipeleft' | 'slideleft' | 'dissolve' | 'none'
   parent_draft_id?: string | null; parent_revision?: number | null
   /** Automatic template packaging; kept as-is on save so edits never drop it. */
   packaging?: Packaging | null

@@ -368,36 +368,51 @@ def _encode_draft(
 
                             curr_input = silence_input + 1
                             if external_audio:
-                                ext_start = audio.find_audio_highlight_start(
-                                    external_audio, clip_duration=duration,
-                                    mode='sync' if audio_sync_mode == 'sync' else ('custom' if audio_sync_mode == 'custom' else 'start'),
-                                    custom_start=audio_custom_start, scene_start=scene.start
-                                )
-                                cmd += ['-ss', str(ext_start), '-i', str(external_audio)]
+                                if audio_sync_mode == 'sync':
+                                    ext_start = max(0.0, scene.start)
+                                elif audio_sync_mode == 'custom':
+                                    ext_start = max(0.0, audio_custom_start + offsets[i])
+                                elif audio_sync_mode == 'start':
+                                    ext_start = max(0.0, offsets[i])
+                                else:  # 'highlight' (default)
+                                    if scene.start > 0 and draft.subtitles:
+                                        ext_start = max(0.0, scene.start)
+                                    else:
+                                        base_hl = audio.find_audio_highlight_start(external_audio, clip_duration=clip_total, mode='highlight')
+                                        ext_start = max(0.0, base_hl + offsets[i])
+                                cmd += ['-ss', f'{ext_start:.3f}', '-i', str(external_audio)]
                                 audio_input_idx = curr_input
                                 curr_input += 1
                                 if bg_music:
-                                    bgm_start = audio.find_audio_highlight_start(
-                                        bg_music, clip_duration=duration,
-                                        mode=audio_sync_mode,
-                                        custom_start=audio_custom_start, scene_start=scene.start
-                                    )
-                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
+                                    if audio_sync_mode == 'custom':
+                                        bgm_start = max(0.0, audio_custom_start + offsets[i])
+                                    elif audio_sync_mode == 'start':
+                                        bgm_start = max(0.0, offsets[i])
+                                    elif audio_sync_mode == 'sync':
+                                        bgm_start = max(0.0, scene.start)
+                                    else:
+                                        base_hl = audio.find_audio_highlight_start(bg_music, clip_duration=clip_total, mode='highlight')
+                                        bgm_start = max(0.0, base_hl + offsets[i])
+                                    cmd += ['-ss', f'{bgm_start:.3f}', '-i', str(bg_music)]
                                     bgm_input_idx = curr_input
                                     curr_input += 1
                             elif bg_music:
-                                bgm_start = audio.find_audio_highlight_start(
-                                    bg_music, clip_duration=duration,
-                                    mode=audio_sync_mode,
-                                    custom_start=audio_custom_start, scene_start=scene.start
-                                )
+                                if audio_sync_mode == 'custom':
+                                    bgm_start = max(0.0, audio_custom_start + offsets[i])
+                                elif audio_sync_mode == 'start':
+                                    bgm_start = max(0.0, offsets[i])
+                                elif audio_sync_mode == 'sync':
+                                    bgm_start = max(0.0, scene.start)
+                                else:
+                                    base_hl = audio.find_audio_highlight_start(bg_music, clip_duration=clip_total, mode='highlight')
+                                    bgm_start = max(0.0, base_hl + offsets[i])
                                 if audio.has_audio(video):
                                     audio_input_idx = 0
-                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
+                                    cmd += ['-ss', f'{bgm_start:.3f}', '-i', str(bg_music)]
                                     bgm_input_idx = curr_input
                                     curr_input += 1
                                 else:
-                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
+                                    cmd += ['-ss', f'{bgm_start:.3f}', '-i', str(bg_music)]
                                     audio_input_idx = curr_input
                                     curr_input += 1
 
@@ -480,26 +495,66 @@ def _encode_draft(
                     overlay_path = None
                     overlay_job = OverlayJob(None, 'classic', True, 'capture', 'capture', 'downgraded', requested_template=html_template or 'classic')
                     overlay_retried = True
-            concat = folder / 'parts.txt'
             durations = [audio.scene_duration(scene) for scene in draft.scenes]
-            # One listing for classic and HTML overlay. Surrounding quotes break paths that contain '.
-            from backend.services.studio.packaging_html import concat_quote
-            concat.write_text(''.join(f"file {concat_quote(part)}\nduration {duration:.9f}\n" for part, duration in zip(parts, durations)), encoding='utf-8')
-            # Encode AAC only once. Per-cut AAC packets add encoder delay and can
-            # leave mismatched stream layouts when a selected interval is silent.
-            cmd = [get_ffmpeg_path(), '-v', 'error', '-f', 'concat', '-safe', '0', '-i', str(concat), '-map', '0:v:0', '-c:v', 'copy']
-            if keep_audio:
-                # Preview and QA both expect -14 LUFS / -1 dBTP. Classic mixes measured
-                # around -22 LUFS when this pass was HTML-only. A failed measurement
-                # keeps the plain resample.
-                audio_filter = 'aresample=48000:async=1:first_pts=0'
-                measured = audio.measure_loudnorm(['-f', 'concat', '-safe', '0', '-i', str(concat)], project_cancellation.run, max(120, sum(durations)))
-                audio_filter = audio.loudnorm_filter(measured)
-                cmd += ['-map', '0:a:0', '-af', audio_filter, '-c:a', 'aac', '-b:a', '160k']
-            else:
-                cmd += ['-an']
-            cmd += ['-t', str(sum(durations)), '-movflags', '+faststart', '-y', str(partial)]
-            project_cancellation.run(cmd, check=True, capture_output=True, timeout=max(180, sum(durations)*2))
+            transition = getattr(draft, 'transition', None) or 'fade'
+            applied_transitions = False
+            if len(parts) > 1 and transition and transition != 'none':
+                min_dur = min(durations) if durations else 0.0
+                td = min(0.5, max(0.2, min_dur / 3.0)) if min_dur > 0.6 else 0.0
+                if td >= 0.2:
+                    try:
+                        v_filters = []
+                        a_filters = []
+                        curr_v = '0:v'
+                        curr_a = '0:a'
+                        cum_time = durations[0]
+
+                        xcmd = [get_ffmpeg_path(), '-v', 'error']
+                        for p in parts:
+                            xcmd += ['-i', str(p)]
+
+                        for idx in range(1, len(parts)):
+                            offset = cum_time - td
+                            out_v = f'v{idx}'
+                            v_filters.append(f'[{curr_v}][{idx}:v]xfade=transition={transition}:duration={td:.3f}:offset={offset:.3f}[{out_v}]')
+                            curr_v = out_v
+
+                            if keep_audio:
+                                out_a = f'a{idx}'
+                                a_filters.append(f'[{curr_a}][{idx}:a]acrossfade=d={td:.3f}:c1=tri:c2=tri[{out_a}]')
+                                curr_a = out_a
+
+                            cum_time += durations[idx] - td
+
+                        filter_complex = ';'.join(v_filters + a_filters)
+                        xcmd += ['-filter_complex', filter_complex, '-map', f'[{curr_v}]']
+                        if keep_audio:
+                            audio_filter = 'aresample=48000:async=1:first_pts=0'
+                            xcmd += ['-map', f'[{curr_a}]', '-af', audio_filter, '-c:a', 'aac', '-b:a', '160k']
+                        else:
+                            xcmd += ['-an']
+                        xcmd += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p',
+                                 '-t', f'{cum_time:.3f}', '-movflags', '+faststart', '-y', str(partial)]
+                        project_cancellation.run(xcmd, check=True, capture_output=True, timeout=max(180, int(cum_time * 3)))
+                        applied_transitions = True
+                    except Exception as xfade_err:
+                        logger.warning("xfade transition joining failed, falling back to clean concat: %s", xfade_err)
+                        applied_transitions = False
+
+            if not applied_transitions:
+                concat = folder / 'parts.txt'
+                from backend.services.studio.packaging_html import concat_quote
+                concat.write_text(''.join(f"file {concat_quote(part)}\nduration {duration:.9f}\n" for part, duration in zip(parts, durations)), encoding='utf-8')
+                cmd = [get_ffmpeg_path(), '-v', 'error', '-f', 'concat', '-safe', '0', '-i', str(concat), '-map', '0:v:0', '-c:v', 'copy']
+                if keep_audio:
+                    audio_filter = 'aresample=48000:async=1:first_pts=0'
+                    measured = audio.measure_loudnorm(['-f', 'concat', '-safe', '0', '-i', str(concat)], project_cancellation.run, max(120, sum(durations)))
+                    audio_filter = audio.loudnorm_filter(measured)
+                    cmd += ['-map', '0:a:0', '-af', audio_filter, '-c:a', 'aac', '-b:a', '160k']
+                else:
+                    cmd += ['-an']
+                cmd += ['-t', str(sum(durations)), '-movflags', '+faststart', '-y', str(partial)]
+                project_cancellation.run(cmd, check=True, capture_output=True, timeout=max(180, sum(durations)*2))
             from backend.services.output_branding import append_outro
             body_seconds = None
             if brand_outro:

@@ -683,8 +683,8 @@ class SpeechRecognizer:
                 logger.warning("无法删除空白字幕文件，将尝试覆盖: %s", output_path)
 
         try:
-            whisper_runtime.ensure_on_path()  # 让 faster_whisper 可导入
-            from faster_whisper import WhisperModel  # 延迟导入：运行时安装目录里的包
+            whisper_runtime.ensure_on_path()  # ensure faster_whisper is on sys.path
+            from faster_whisper import WhisperModel  # type: ignore[import-not-found,import-untyped]  # lazy import from whisper-runtime
 
             language = None if (config.language == LanguageCode.AUTO or config.task == "translate") else config.language.value.split("-")[0]
             models_dir = str(whisper_runtime.get_models_dir() / "hub")
@@ -752,7 +752,7 @@ class SpeechRecognizer:
                             # with the bundled ffmpeg instead; don't patch global av.open.
                             # The decode shares this Whisper cap (a timeout of 0 used to
                             # fall through to 300s and then run with no further limit).
-                            import numpy as np
+                            import numpy as np  # type: ignore[import-not-found,import-untyped]
                             left = clock.remaining()
                             if left <= 0:
                                 clock.check()

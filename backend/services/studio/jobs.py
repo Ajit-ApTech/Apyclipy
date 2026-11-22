@@ -956,8 +956,20 @@ def _content_drafts(project_id, plan, video, platforms=()):
         user_max = (plan.get('overrides') or {}).get('max_clips') or getattr(prefs, 'max_clips', None)
         if user_max and int(user_max) > 0:
             drafts = sorted(drafts, key=lambda d: d.get(SCORE_KEY, 0), reverse=True)[:int(user_max)]
+        if len(drafts) >= 2:
+            try:
+                all_scenes = [Scene.model_validate(d['scenes'][0]) for d in drafts[:4]]
+                is_drone = any('drone' in str(s.label).lower() or 'aerial' in str(s.label).lower() for s in all_scenes)
+                montage_title = 'Cinematic Drone Montage' if is_drone else 'Highlights Montage Reel'
+                drafts.insert(0, {**Draft(
+                    id=uuid.uuid4().hex, title=montage_title, scenes=all_scenes, origin='auto-content',
+                    language=prefs.language, aspect=prefs.aspect, layout='crop' if prefs.aspect == 'portrait' else 'fit',
+                    subtitles=True, transition='fade',
+                ).model_dump(), SCORE_KEY: 0.99})
+            except Exception as e:
+                logger.warning('Failed to assemble multi-clip montage reel: %s', e)
         if not drafts:
-            raise UserFacingError('没有提取到可渲染的内容片段，请检查字幕或重新导入')
+            raise UserFacingError('No renderable content clips were extracted. Please check subtitles or re-import.')
         return drafts
     if route != 'visual':
         raise UserFacingError('没有可用的自动分析路径，请检查模型设置后重试')
