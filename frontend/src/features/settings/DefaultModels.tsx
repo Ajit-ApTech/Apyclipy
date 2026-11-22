@@ -73,7 +73,7 @@ function OfferRow({ settings, purpose, group, offer, onChange }: {
     <OptionButton
       selected={!disabled && isFixedSelected(settings, purpose, group.modelId, offer)}
       disabled={disabled}
-      label={offer.displayName}
+      label={t(offer.displayName)}
       hint={offer.connected ? t('已连接') : t('未连接')}
       onClick={() => offer.connectionId && onChange(applyFixedSelection(settings, purpose, group.modelId, offer.connectionId))}
     />

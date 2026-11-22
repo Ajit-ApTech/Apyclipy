@@ -159,16 +159,17 @@ def _visual(settings: ai_models.ModelSettings, mode: str | None = None) -> dict:
             return _check(True, 'optional', label='Not enabled')
         return _check(False, 'validation_failed', 'settings_vision', label=vision_label or None)
     if ai_models.vision_follow_lacks_capability(settings):
-        return _check(False, 'vision_unsupported', 'settings_vision', label=vision_label or None)
-    if mode != 'visual':
+        if mode == 'visual':
+            return _check(False, 'vision_unsupported', 'settings_vision', label=vision_label or None)
         return _check(True, 'optional', label='Not enabled')
-    # Same answer as the pipeline (vision_endpoint): capability=auto resolves through
-    # provider metadata and supports_vision, not only a literal 'multimodal'.
     try:
         if ai_models.vision_endpoint(settings) is not None:
             return _check(True, 'configured', label=vision_label or None)
     except ValueError:
-        return _check(False, 'settings_invalid', 'settings_vision', label=vision_label or None)
+        if mode == 'visual':
+            return _check(False, 'settings_invalid', 'settings_vision', label=vision_label or None)
+    if mode != 'visual':
+        return _check(True, 'optional', label='Not enabled')
     return _check(False, 'not_configured', 'settings_vision', label=vision_label or None)
 
 
