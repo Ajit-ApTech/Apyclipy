@@ -1,79 +1,79 @@
-# 安装与第一次出片
+# Installation and your first clips
 
-[English](USER_INSTALLATION_GUIDE.en.md) · [返回首页](../README.md) · [排错指南](FAQ.md)
+[README](../README.md) · [Troubleshooting](FAQ.en.md)
 
-## 选择使用方式
+## Choose how to run AutoClip
 
-| 环境 | 建议方式 |
+| Environment | Recommended option |
 | --- | --- |
-| macOS · Apple Silicon（M 系列） | [下载桌面版](https://github.com/zhouxiaoka/autoclip/releases/latest)，选择名称含 `aarch64` 的 `.dmg` |
-| Windows 10 / 11 · x64 | [下载桌面版](https://github.com/zhouxiaoka/autoclip/releases/latest)，选择名称含 `x64-setup.exe` 的安装包 |
-| Intel Mac / Linux / 自建服务 | 目前没有桌面安装包。用 [Docker](../DOCKER.md) 或 [CLI](CLI_AND_MCP.md) |
+| macOS · Apple Silicon (M series) | [Desktop download](https://github.com/zhouxiaoka/autoclip/releases/latest): choose the `.dmg` containing `aarch64` |
+| Windows 10 / 11 · x64 | [Desktop download](https://github.com/zhouxiaoka/autoclip/releases/latest): choose the installer containing `x64-setup.exe` |
+| Intel Mac / Linux / self-hosted server | No desktop build yet. Use [Docker](DOCKER.en.md) or the [CLI](CLI_AND_MCP.md) (CLI reference in Chinese) |
 
-以 Release 页面实际提供的安装包和系统要求为准。不要把源码压缩包 `Source code` 当作安装包。桌面版内置 Python 和 FFmpeg；本地语言模型、语音转写组件和模型文件需要另外准备。
+Check the actual assets and requirements on the release page. `Source code` archives are not application installers. Desktop installers include Python and FFmpeg; local language models, speech recognition components, and model files need separate setup.
 
-处理大文件和运行本地模型需要额外内存与磁盘空间。空间预算应包含原视频、转写模型、临时文件、切片与导出结果；不承诺固定处理速度或最低配置下的效果。
+Large files and local models need additional memory and disk space. Allow space for source videos, speech models, temporary files, clips, and exports. Processing speed depends on your hardware, models, and input.
 
-## 安装桌面版
+## Install the desktop app
 
 ### macOS
 
-打开 `.dmg`，将 AutoClip Desktop 拖到“应用程序”，再从“应用程序”打开。macOS 15 及以上：双击一次；若系统拦截，打开「系统设置 → 隐私与安全性 → 仍要打开」（[Apple 说明](https://developer.apple.com/news/?id=saqachfa)）。较旧的系统仍可右键应用 →「打开」。先确认安装包来自本仓库的 Releases。不要为此关闭系统全局安全检查。
+Open the `.dmg`, drag AutoClip Desktop into Applications, and launch it from there. On macOS 15 and later, double-click once; if macOS blocks the app, open System Settings → Privacy & Security → Open Anyway ([Apple’s note](https://developer.apple.com/news/?id=saqachfa)). On older macOS, right-click the app and choose Open. Confirm the installer came from this repository’s Releases. Do not disable system-wide security checks.
 
 ### Windows
 
-运行 `x64-setup.exe` 并按向导安装。安装包按用户安装，无需常规使用管理员权限；缺少 WebView2 时，安装器可能需要联网下载。若 SmartScreen 拦截，点「更多信息 → 仍要运行」。先确认安装包来自本仓库的 Releases。
+Run `x64-setup.exe` and follow the installer. Installation is per user; routine use does not require administrator privileges. If WebView2 is missing, the installer may need internet access to download it. If SmartScreen appears, choose More info → Run anyway. Confirm the installer came from this repository’s Releases.
 
-## 第一次使用
+## First run
 
-1. **先配置模型。** 打开“设置”，选择 Qwen、OpenAI、Gemini、DeepSeek、Doubao Seed、Kimi、GLM、Grok 或本地模型。云端服务填写自己的 API Key 和模型名，点击测试连接，再保存；兼容接口可配置 Base URL。本地模型先在 Ollama / LM Studio 启动服务并加载模型。默认路线是字幕分析。游戏视觉分析自 **v1.4.0** 起可选：需要多模态模型，并显式启用付费视觉初筛。配好模型不等于已经允许每次视觉调用。
-2. **准备字幕（默认路线）。** 有时间轴准确的 `.srt` 就与视频一起导入。没有字幕、本地 Whisper 装不上或太慢时，打开「设置 → 默认模型 → 语音转字幕」，改用百炼云端转写（`qwen-audio-3.1-asr-flash`，大约 0.1 元/小时音频，具体以阿里云账单为准）。音频会上传到云端。导入被拦住时，点「改用云端转写」。API Key 分两步：先用作者推荐链接注册或领优惠（<https://www.aliyun.com/benefit?userCode=qmyj6jch>），再到 <https://bailian.console.aliyun.com/> 创建。若仍用本机 Whisper：没有字幕的视频，第一次要下载本地转写组件（约 220 MB，国内网络约 15 分钟）。
-3. **导入并确认。** 准备一段你有权使用的短视频。在首页用「文件导入」导入视频及可选 SRT，或用「链接导入」粘贴 B 站 / YouTube 链接。先确认制作类型，也可手动校正。未确认的导入可恢复；确认后才正式理解和剪辑。素材要求与示例见下方「先看示例，再用自己的短片」。
-4. **在共用编辑器里检查。** 查看片段起止、标题和文案。输出仍需人工检查边界、裁切和文案。若失败，按页面提示定位字幕、分析或导出阶段，参见 [FAQ](FAQ.md)。
-5. **导出成片。** 使用导出入口，按发布平台选择预设。竖屏导出可加入字幕和标题卡；导出后先播放检查，再自行发布。
+1. **Configure a model.** Open Settings and choose Qwen, OpenAI, Gemini, DeepSeek, Doubao Seed, Kimi, GLM, Grok, or a local model. For cloud services, enter your own API key and model name, test the connection, and save. Compatible endpoints can set a Base URL. For Ollama / LM Studio, start the model service and load a model first. Subtitle analysis is the default. As of **v1.4.0**, game visual analysis is optional: it needs a multimodal model and an explicit enable of paid visual screening. Saving a model does not authorize every visual call.
+2. **Prepare subtitles (default route).** Import an accurately timed `.srt` alongside your video when available. When the source has no subtitles, or local Whisper will not install or is too slow, open Settings → Default models → “Speech to subtitles” and switch to Bailian cloud transcription (`qwen-audio-3.1-asr-flash`, about 0.1 yuan per hour of audio; the Alibaba Cloud bill is the actual charge). The audio is uploaded to the cloud. If import is blocked, click “Use cloud transcription instead”. Get the API key in two steps: register or claim the offer with the author’s recommendation link (<https://www.aliyun.com/benefit?userCode=qmyj6jch>), then create the key at <https://bailian.console.aliyun.com/>. To stay on local Whisper: a video without subtitles has to download the local transcription component the first time (about 220 MB, about 15 minutes on a slow network).
+3. **Import, then confirm.** Use a short video you are allowed to use. On the home screen, use file import for the video and optional SRT, or link import for a link you are allowed to use. Confirm the production type, and correct it by hand if needed. An unconfirmed import can be resumed. Understanding and cutting start only after confirmation. See [See the example, then use your own clip](#see-the-example-then-use-your-own-clip) below.
+4. **Check the result in the shared editor.** Review boundaries, titles, and copy. You still need to check boundaries, crops, and copy yourself. If processing fails, identify whether subtitles, analysis, or export failed, then follow the [FAQ](FAQ.en.md).
+5. **Export.** Use the export action and choose a platform preset. Vertical exports can include subtitles and title cards. Play the exported file before publishing it yourself.
 
-默认路线是字幕分析，适合访谈、播客、课程等以语言为主的视频。自 **v1.4.0** 起，游戏录屏可另行启用视觉分析，需要多模态模型并显式启用付费视觉初筛。单一样本不代表所有游戏；输出仍需人工检查，不承诺广告投放效果。v1.4.0 不含 CTA 动效、生成式品牌尾卡、卡拉 OK / 逐词字幕。
+Subtitle analysis is the default and suits interviews, podcasts, and courses. As of **v1.4.0**, gameplay recordings can use optional visual analysis, which needs a multimodal model and an explicit enable of paid visual screening. One sample game does not stand for every game. Review the output yourself. There is no claim about ad performance. v1.4.0 does not include CTA motion, generative brand end cards, or karaoke / word-level subtitles.
 
-## 先看示例，再用自己的短片
+## See the example, then use your own clip
 
-安装后，首页还没有项目时，点「用示例项目看看效果」。示例在安装包里（`source.mp4` 和 `source.srt`），不需要 API Key。
+After install, when the home screen has no projects, click "Try Example Project" (See an example project). The example is inside the installer (`source.mp4` and `source.srt`) and needs no API key.
 
-之后再用你自己有权使用的短视频：
+Then use a short video you are allowed to use:
 
-- 时长约 3–5 分钟，对白清楚。
-- 尽量带上时间轴准确的 `.srt`。没有字幕、本地 Whisper 装不上或太慢时，按上面的步骤改用百炼云端转写；音频会上传到云端。
-- 来源用本地文件或 B 站。请确认你有权使用该媒体。
+- About 3–5 minutes, with clear speech.
+- Prefer an accurately timed `.srt`. When there are no subtitles, or local Whisper will not install or is too slow, switch to Bailian cloud transcription as described above. The audio is uploaded to the cloud.
+- Use a local file or Bilibili. Confirm that you have the right to use the media.
 
-第一次出片的常见卡点见 [讨论 #128](https://github.com/zhouxiaoka/autoclip/discussions/128)。
+Common sticking points on a first run are in [Discussion #128](https://github.com/zhouxiaoka/autoclip/discussions/128).
 
-## 云端与本地模型
+## Cloud and local models
 
-| 方式 | 准备事项 |
+| Option | What you need |
 | --- | --- |
-| 云端 API | 服务商账号、可用 API Key、对应的模型访问权限与网络；调用费用由服务商收取 |
-| Ollama | 启动 Ollama，运行 `ollama pull qwen2.5:7b`，在 AutoClip 选择 Ollama；长视频请把上下文调到 16384 以上（`OLLAMA_CONTEXT_LENGTH` 或 `num_ctx`） |
-| LM Studio | 下载并加载模型，启动 Local Server，再在 AutoClip 选择实际可用的模型；长视频请在加载模型时把 Context Length 调到 16384 以上 |
+| Cloud API | A provider account, working API key, access to the selected model, and network access; the provider bills API usage |
+| Ollama | Start Ollama, run `ollama pull qwen2.5:7b`, and select Ollama in AutoClip; for long videos raise the context to 16384 or more (`OLLAMA_CONTEXT_LENGTH` or `num_ctx`) |
+| LM Studio | Download and load a model, start Local Server, and select an available model in AutoClip; for long videos set Context Length to 16384 or more when loading the model |
 
-本地预设不需要云端 API Key；本地硬件仍需承担推理开销。Whisper 负责语音转文字。字幕路线用语言模型分析字幕或文案；视觉路线另需多模态模型，并显式启用后才会发送抽样画面。二者都要单独配置。
+Local presets do not require a cloud API key, but inference uses your hardware. Whisper converts speech to text. The subtitle route uses a language model on subtitles or copy. The visual route needs a multimodal model and sends sampled frames only after you explicitly enable it. Configure each one separately.
 
-## 更新与备份
+## Updates and backups
 
-关闭正在处理的任务并退出应用，备份数据目录后，从 [Releases](https://github.com/zhouxiaoka/autoclip/releases/latest) 获取新版安装包。v1.3.0 及以前需先手动安装 v1.3.1。自 v1.3.1 起，可在「设置 → 应用 → 检查更新」获取后续版本；确认后下载安装并重启。启动时自动检查同一版本一天最多提醒一次，可在设置或提醒弹层关闭；关闭后仍可手动检查。
+Finish or stop active jobs and exit the app. Back up your data directory, then download the new installer from [Releases](https://github.com/zhouxiaoka/autoclip/releases/latest). Users on v1.3.0 or earlier must install v1.3.1 manually. From v1.3.1 onward, use Settings → Application → Check for updates for future releases; installation and restart require your confirmation. Startup checks remind at most once a day for the same version and can be turned off in Settings or the reminder. Manual checks remain available.
 
-默认桌面数据目录：
+Default desktop data directories:
 
-| 平台 | 目录 |
+| Platform | Directory |
 | --- | --- |
 | macOS | `~/Library/Application Support/AutoClip` |
 | Windows | `%APPDATA%\AutoClip` |
 | Linux / CLI | `~/.local/share/AutoClip` |
 
-使用 CLI 自定义 `--data-dir` / `AUTOCLIP_DATA_DIR` 时，以实际配置目录为准。日志通常在数据目录的 `logs` 中。备份应同时包含项目文件、数据库和配置；这些配置可能含 API Key，应妥善保存。不要把卸载、删除数据库或清空数据目录作为常规排错步骤，也不要假设已有自动备份。Windows 卸载默认保留数据目录；只有在卸载界面勾选「同时删除 AutoClip 数据（项目、设置、API 密钥）」才会删除 `%APPDATA%\AutoClip`，升级安装从不删除。
+If you set `--data-dir` / `AUTOCLIP_DATA_DIR`, use that directory instead. Logs are usually in its `logs` subdirectory. Back up the project files, database, and settings together. Settings may contain API keys, so protect your backups. Do not uninstall, delete the database, or clear your data directory as a routine troubleshooting step. Do not assume an automatic backup exists. Uninstalling on Windows keeps the data directory by default; `%APPDATA%\AutoClip` is deleted only if you tick "Also delete my AutoClip data (projects, settings, API keys)" in the uninstaller, and upgrades never delete it.
 
-## 获取帮助
+## Help
 
-先看 [常见问题](FAQ.md) 和 [已知问题](https://github.com/zhouxiaoka/autoclip/issues/96)。第一次出片卡住（模型、没有字幕、系统警告）请到 [第一次出片问答](https://github.com/zhouxiaoka/autoclip/discussions/128)。欢迎说明和分类见 [欢迎与分类](https://github.com/zhouxiaoka/autoclip/discussions/127)。仍无法解决时，邮件提供系统、应用版本、模型、失败阶段、复现步骤和已脱敏日志。
+Check the [FAQ](FAQ.en.md) and [known issues](https://github.com/zhouxiaoka/autoclip/issues/96) first. If the first clip is stuck (model, no subtitles, or OS warnings), continue in the [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128). See [welcome and categories](https://github.com/zhouxiaoka/autoclip/discussions/127). If the problem remains, email your OS, application version, model, failed stage, reproduction steps, and sanitized logs.
 
-个人业余维护，回复时间不固定，不提供即时客服或一对一部署服务。
+Maintained by an individual in their spare time. Response times vary; live support and one-to-one deployment assistance are not provided.
 
-邮箱：[christine_zhouye@163.com](mailto:christine_zhouye@163.com)
+Email: [christine_zhouye@163.com](mailto:christine_zhouye@163.com)

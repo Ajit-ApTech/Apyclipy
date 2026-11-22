@@ -517,9 +517,9 @@ class SimplePipelineAdapter:
                 try:
                     titled_clips = pipeline_resume.load_json(metadata_dir / 'step4_titles.json')
                     if titled_clips:
-                        logger.info('R3: 复用 step4_titles.json（%d clips）', len(titled_clips))
+                        logger.info('R3: Reusing step4_titles.json (%d clips)', len(titled_clips))
                         outlines, timeline_data, scored_clips = [], [], titled_clips
-                        emit_progress(self.project_id, "HIGHLIGHT", "片段挑选完成", subpercent=40)
+                        emit_progress(self.project_id, "HIGHLIGHT", "Highlight clips selected", subpercent=40)
                 except Exception as error:  # noqa: BLE001
                     logger.warning('R3: failed to reuse step4: %s', error)
                     titled_clips = None
@@ -532,30 +532,30 @@ class SimplePipelineAdapter:
                 pass  # already set outlines/timeline/scored above when reused
             elif titled_clips is not None:
                 outlines, timeline_data, scored_clips = [], [], titled_clips
-                emit_progress(self.project_id, "HIGHLIGHT", "片段挑选完成", subpercent=40)
+                emit_progress(self.project_id, "HIGHLIGHT", "Highlight clips selected", subpercent=40)
                 # one-pass wrote step4; refresh stamp so next retry can skip
                 pipeline_resume.write_stamp(metadata_dir, video=video_path, prompt_files=prompt_files)
             else:
-                # Step 1: 大纲提取（字幕为空 / 模型全部失败 / 无法解析时由 step1 自己抛 PipelineFailure）
+                # Step 1: Outline extraction
                 if 'step1' in reuse_steps:
-                    logger.info('R3: 复用 Step 1 outline')
+                    logger.info('R3: Reusing Step 1 outline')
                     outlines = pipeline_resume.load_json(metadata_dir / 'step1_outline.json')
                 else:
-                    logger.info("执行Step 1: 大纲提取")
+                    logger.info("Executing Step 1: Outline extraction")
                     llm_usage.set_stage("outline")
                     outlines = run_step1_outline(srt_path, metadata_dir=metadata_dir, prompt_files=prompt_files)
                     pipeline_resume.write_stamp(metadata_dir, video=video_path, prompt_files=prompt_files)
-                emit_progress(self.project_id, "SUBTITLE", "字幕处理完成", subpercent=100)  # never behind the transcription band
+                emit_progress(self.project_id, "SUBTITLE", "Subtitles processed", subpercent=100)  # never behind the transcription band
             
-                # 阶段3: 内容分析
-                emit_progress(self.project_id, "ANALYZE", "开始内容分析")
+                # Stage 3: Content analysis
+                emit_progress(self.project_id, "ANALYZE", "Analyzing video content...")
             
-                # Step 2: 时间线提取
+                # Step 2: Timeline extraction
                 if 'step2' in reuse_steps:
-                    logger.info('R3: 复用 Step 2 timeline')
+                    logger.info('R3: Reusing Step 2 timeline')
                     timeline_data = pipeline_resume.load_json(metadata_dir / 'step2_timeline.json')
                 else:
-                    logger.info("执行Step 2: 时间线提取")
+                    logger.info("Executing Step 2: Timeline extraction")
                     llm_usage.set_stage("timeline")
                     timeline_data = run_step2_timeline(
                         metadata_dir / "step1_outline.json",
@@ -567,14 +567,14 @@ class SimplePipelineAdapter:
                     # Step 2 normally raises its observed failure. Keep the legacy
                     # fallback for callers returning [] without diagnostic data.
                     raise empty_timeline_failure(len(outlines))
-                emit_progress(self.project_id, "ANALYZE", "时间线提取完成", subpercent=50)
+                emit_progress(self.project_id, "ANALYZE", "Timeline extraction completed", subpercent=50)
             
-                # Step 3: 内容评分
+                # Step 3: Content scoring
                 if 'step3' in reuse_steps:
-                    logger.info('R3: 复用 Step 3 scores')
+                    logger.info('R3: Reusing Step 3 scores')
                     scored_clips = pipeline_resume.load_json(metadata_dir / 'step3_high_score_clips.json')
                 else:
-                    logger.info("执行Step 3: 内容评分")
+                    logger.info("Executing Step 3: Content scoring")
                     llm_usage.set_stage("scoring")
                     scored_clips = run_step3_scoring(
                         metadata_dir / "step2_timeline.json",
@@ -586,20 +586,20 @@ class SimplePipelineAdapter:
                     from backend.pipeline.step3_scoring import resolve_min_score_threshold
                     raise PipelineFailure(
                         "ANALYZE",
-                        f"没有片段通过评分筛选（{len(timeline_data)} 个候选，阈值 {resolve_min_score_threshold()}）。",
+                        f"No clips passed scoring filter ({len(timeline_data)} candidates, threshold {resolve_min_score_threshold()}).",
                         HINT_LOWER_THRESHOLD,
                     )
-                emit_progress(self.project_id, "ANALYZE", "内容分析完成", subpercent=100)
+                emit_progress(self.project_id, "ANALYZE", "Content analysis completed", subpercent=100)
             
-                # 阶段4: 片段定位
-                emit_progress(self.project_id, "HIGHLIGHT", "开始片段定位")
+                # Stage 4: Highlight segment locating
+                emit_progress(self.project_id, "HIGHLIGHT", "Locating highlight segments...")
             
-                # Step 4: 标题生成
+                # Step 4: Title generation
                 if 'step4' in reuse_steps:
-                    logger.info('R3: 复用 Step 4 titles')
+                    logger.info('R3: Reusing Step 4 titles')
                     titled_clips = pipeline_resume.load_json(metadata_dir / 'step4_titles.json')
                 else:
-                    logger.info("执行Step 4: 标题生成")
+                    logger.info("Executing Step 4: Title generation")
                     llm_usage.set_stage("titles")
                     titled_clips = run_step4_title(
                         metadata_dir / "step3_high_score_clips.json",
@@ -607,27 +607,27 @@ class SimplePipelineAdapter:
                         prompt_files=prompt_files,
                     )
                     pipeline_resume.write_stamp(metadata_dir, video=video_path, prompt_files=prompt_files)
-                emit_progress(self.project_id, "HIGHLIGHT", "标题生成完成", subpercent=40)
+                emit_progress(self.project_id, "HIGHLIGHT", "Titles generated", subpercent=40)
             
             if clips_only:
                 collections, video_result = [], {}
-                emit_progress(self.project_id, "HIGHLIGHT", "片段定位完成", subpercent=100)
+                emit_progress(self.project_id, "HIGHLIGHT", "Highlight segments located", subpercent=100)
             else:
-                # Step 5: 主题聚类
-                logger.info("执行Step 5: 主题聚类")
+                # Step 5: Clustering
+                logger.info("Executing Step 5: Topic clustering")
                 llm_usage.set_stage("clustering")
                 collections = run_step5_clustering(
                     metadata_dir / "step4_titles.json",
                     metadata_dir=str(metadata_dir),
                     prompt_files=prompt_files,
                 )
-                emit_progress(self.project_id, "HIGHLIGHT", "片段定位完成", subpercent=100)
+                emit_progress(self.project_id, "HIGHLIGHT", "Highlight segments located", subpercent=100)
             
-                # 阶段5: 视频导出
-                emit_progress(self.project_id, "EXPORT", "开始视频导出")
+                # Stage 5: Video export
+                emit_progress(self.project_id, "EXPORT", "Exporting video clips...")
             
-                # Step 6: 视频切割
-                logger.info("执行Step 6: 视频切割")
+                # Step 6: Cutting video
+                logger.info("Executing Step 6: Video cutting")
                 video_result = run_step6_video(
                     metadata_dir / "step4_titles.json",
                     metadata_dir / "step5_collections.json",
@@ -640,13 +640,13 @@ class SimplePipelineAdapter:
                 if titled_clips and not video_result.get("clips_generated"):
                     raise PipelineFailure(
                         "EXPORT",
-                        f"视频切割没有产出任何文件（{len(titled_clips)} 个片段待切）。",
+                        f"Video cutting yielded no files ({len(titled_clips)} clips to cut).",
                         HINT_CHECK_FFMPEG,
                     )
-                emit_progress(self.project_id, "EXPORT", "视频导出完成", subpercent=100)
+                emit_progress(self.project_id, "EXPORT", "Video export completed", subpercent=100)
             
-            # 阶段6: 处理完成
-            emit_progress(self.project_id, "DONE", "处理完成")
+            # Stage 6: Done
+            emit_progress(self.project_id, "DONE", "Processing complete")
             
             # 自动同步数据到数据库
             try:

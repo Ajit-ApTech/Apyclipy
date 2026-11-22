@@ -91,8 +91,10 @@
 .studio-diagnose .studio-readiness{margin:0}
 .studio-diagnose .studio-error,.studio-diagnose .studio-muted{margin:0}
 .studio-readiness-row .ac-status{min-width:0;line-height:1.45}
-.ac-dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ac-space-md);min-height:280px;margin:var(--ac-space-sm) 0 var(--ac-space-lg);padding:var(--ac-space-3xl) var(--ac-space-xl);border:1px dashed var(--ac-line);border-radius:var(--ac-radius);background:var(--ac-bg);text-align:center;transition:border-color 160ms ease,background 160ms ease}
-.ac-dropzone.is-hot{border-color:var(--ac-accent);background:var(--ac-card)}
+.ac-dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ac-space-md);min-height:290px;margin:var(--ac-space-sm) 0 var(--ac-space-lg);padding:44px 28px;border:1.5px dashed var(--ac-line);border-radius:var(--ac-radius);background:var(--ac-line-2);text-align:center;transition:all var(--ac-t-short) var(--ac-ease-out)}
+.ac-dropzone:hover{border-color:color-mix(in srgb,var(--ac-accent) 40%,var(--ac-line))}
+.ac-dropzone.is-hot{border-color:var(--ac-accent);background:color-mix(in srgb,var(--ac-accent) 6%,var(--ac-card));box-shadow:0 0 0 4px color-mix(in srgb,var(--ac-accent) 15%,transparent)}
+.ac-dropzone-icon{width:56px;height:56px;border-radius:16px;background:color-mix(in srgb,var(--ac-accent) 12%,var(--ac-card));border:1px solid color-mix(in srgb,var(--ac-accent) 25%,transparent);color:var(--ac-accent);display:flex;align-items:center;justify-content:center;box-shadow:var(--ac-shadow-sm);margin-bottom:2px}
 .ac-dropzone-title{margin:0;color:var(--ac-ink);font-size:22px;font-weight:500;letter-spacing:-0.02em;line-height:1.3}
 .ac-dropzone-hint{max-width:36rem;margin:0;color:var(--ac-sub);font-size:14px;line-height:1.6}
 .ac-dropzone-field{width:min(520px,100%);margin:var(--ac-space-sm) 0 0}
@@ -106,9 +108,13 @@
 .ac-undo-action{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .studio-progress{width:100%;max-width:420px;margin:2px auto 8px;text-align:left}
 .studio-progress-track{height:4px;background:var(--ac-line);border-radius:999px;overflow:hidden}
-.studio-progress-fill{height:100%;background:var(--ac-accent);border-radius:999px;transition:width .4s ease}
+.studio-progress-fill{position:relative;overflow:hidden;height:100%;background:var(--ac-accent);border-radius:999px;transition:width .4s ease}
+.studio-progress-fill:not(.studio-progress-fill--busy)::after{content:'';position:absolute;top:0;left:0;bottom:0;right:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent);animation:studio-shimmer 2s infinite}
+@keyframes studio-shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 .studio-progress-fill--busy{width:34%;animation:ac-line-busy 1.2s ease-in-out infinite}
-@media (prefers-reduced-motion: reduce){.studio-progress-fill--busy{animation:none;width:40%}}
+@media (prefers-reduced-motion: reduce){.studio-progress-fill--busy{animation:none;width:40%}.studio-progress-fill::after{animation:none}}
+.studio-live-pulse-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;animation:studio-pulse 1.8s infinite}
+@keyframes studio-pulse{0%{transform:scale(0.9);opacity:0.6}50%{transform:scale(1.25);opacity:1}100%{transform:scale(0.9);opacity:0.6}}
 .studio-progress-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}
 .studio-progress-meta span{color:var(--ac-sub);font-size:12.5px}
 .studio-progress-meta .ac-mono{color:var(--ac-accent)}
@@ -145,3 +151,245 @@
 
 .studio-first-window{margin:12px 0 0;padding:10px 12px;border:1px solid var(--ac-line);border-radius:10px;background:var(--ac-bg, #f8fafc)}
 .studio-first-window .studio-muted{margin:0}
+
+/* ===== Bento Advanced Settings Panel ===== */
+.studio-advanced-details {
+  margin-top: 18px;
+  border: 1px solid var(--ac-line);
+  border-radius: var(--ac-radius);
+  background: var(--ac-card);
+  padding: 16px 18px;
+  transition: border-color var(--ac-t-micro) ease;
+}
+.studio-advanced-details[open] {
+  border-color: color-mix(in srgb, var(--ac-line) 50%, var(--ac-muted));
+}
+.studio-details-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.studio-details-summary::-webkit-details-marker {
+  display: none;
+}
+.studio-bento-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ac-line);
+}
+.studio-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .studio-bento-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.studio-bento-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--ac-line);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-line-2);
+}
+.studio-bento-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.studio-bento-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac-ink);
+}
+.studio-bento-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--ac-card);
+  border: 1px solid var(--ac-line);
+  color: var(--ac-sub);
+}
+.studio-bento-desc {
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+.studio-bento-range-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--ac-line);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-line-2);
+}
+.studio-bento-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.studio-bento-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.studio-bento-range-sep {
+  margin-top: 16px;
+  color: var(--ac-muted);
+  font-weight: 500;
+}
+
+/* ===== Redesigned Studio Processing Card ===== */
+.studio-processing-card {
+  padding: 28px 24px;
+  margin-bottom: 28px;
+  border: 1px solid var(--ac-line);
+  border-radius: var(--ac-radius);
+  background: var(--ac-card);
+  box-shadow: var(--ac-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.studio-processing-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ac-accent), color-mix(in srgb, var(--ac-accent) 40%, transparent));
+}
+.studio-stage-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.studio-stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--ac-line-2);
+  color: var(--ac-muted);
+}
+.studio-stage-chip.is-active {
+  background: color-mix(in srgb, var(--ac-accent) 12%, transparent);
+  color: var(--ac-accent);
+  box-shadow: 0 0 0 1px var(--ac-accent);
+}
+.studio-stage-chip.is-done {
+  color: var(--ac-ok);
+  background: color-mix(in srgb, var(--ac-ok) 10%, transparent);
+}
+.studio-progress {
+  width: 100%;
+  max-width: 480px;
+  margin: 6px auto 12px;
+  text-align: left;
+}
+.studio-progress-track {
+  height: 6px;
+  background: var(--ac-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.studio-progress-fill {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  background: var(--ac-accent);
+  border-radius: 999px;
+  transition: width .4s cubic-bezier(.2,.7,.2,1);
+}
+.studio-live-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ac-accent) 8%, var(--ac-card));
+  border: 1px solid color-mix(in srgb, var(--ac-accent) 24%, transparent);
+  color: var(--ac-accent);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 12px auto 6px;
+}
+
+/* ===== Bento Task Parameters Grid ===== */
+.studio-params-card {
+  margin-top: 24px;
+  border: 1px solid var(--ac-line);
+  border-radius: var(--ac-radius);
+  background: var(--ac-card);
+  overflow: hidden;
+}
+.studio-params-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ac-ink);
+}
+.studio-params-summary::-webkit-details-marker {
+  display: none;
+}
+.studio-params-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--ac-line);
+  margin-top: 4px;
+  padding-top: 16px;
+}
+.studio-params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.studio-param-item {
+  padding: 12px 14px;
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-line-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.studio-param-label {
+  font-size: 11.5px;
+  color: var(--ac-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.studio-param-value {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ac-ink);
+  overflow-wrap: anywhere;
+}

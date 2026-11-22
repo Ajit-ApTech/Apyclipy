@@ -171,6 +171,8 @@ export interface ImportOptions {
   portrait_style?: 'auto' | 'interview' | 'podcast'
   html_template?: 'editorial' | 'street' | 'news' | 'cinema' | 'classic'
   source_window?: SourceWindow | null
+  max_clips?: number | null
+  download_quality?: '720p' | '1080p'
 }
 
 /** T2: first-success devices are nudged to process only the first 30 minutes. */

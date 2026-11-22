@@ -339,6 +339,8 @@ class ImportOptions(BaseModel):
     recommended_template: Literal['editorial', 'street', 'classic'] | None = None
     branding: BrandingOptions = Field(default_factory=BrandingOptions)
     source_window: SourceWindow | None = None
+    max_clips: int | None = Field(default=None, ge=1, le=50)
+    download_quality: Literal['720p', '1080p'] | None = '1080p'
 
     @model_validator(mode='after')
     def unique_platforms(self):

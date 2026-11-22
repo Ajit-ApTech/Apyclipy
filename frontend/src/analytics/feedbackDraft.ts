@@ -118,51 +118,7 @@ export function captureProperties(draft: FeedbackDraft): Record<string, string |
   return props
 }
 
-function platformLabel(os: string): string {
-  if (os === 'macos') return 'macOS 桌面版 (Apple Silicon)'
-  if (os === 'windows') return 'Windows 桌面版 (x64)'
-  if (os === 'linux') return 'Docker'
-  return '源码运行 / From source'
-}
-
-function publicLines(draft: FeedbackDraft): string {
-  const lines = [
-    draft.text,
-    '',
-    `反馈编号：${draft.feedbackId}`,
-    `<!-- feedback-id:${draft.feedbackId} -->`,
-    '',
-    `版本：${draft.version || '未知'}`,
-    `系统：${draft.os || '未知'} / ${draft.arch || '未知'}`,
-    `来源：${draft.source || '未知'}`,
-  ]
-  if (draft.stage) lines.push(`阶段：${draft.stage}`)
-  if (draft.errorCode) lines.push(`错误码：${draft.errorCode}`)
-  if (draft.unexpectedType) lines.push(`异常类型：${draft.unexpectedType}`)
-  if (draft.transcriptionProvider) lines.push(`转写模型：${draft.transcriptionProvider}${draft.transcriptionModel ? ` / ${draft.transcriptionModel}` : ''}`)
-  if (draft.llmProvider) lines.push(`模型：${draft.llmProvider}${draft.llmModel ? ` / ${draft.llmModel}` : ''}`)
-  if (draft.errorMessage) lines.push('', '错误', draft.errorMessage)
-  return lines.join('\n').slice(0, 1500)
-}
-
 /** 直接送达失败时打开的预填页。链接里没有邮箱。 */
-export function githubFallbackUrl(draft: FeedbackDraft): string {
-  if (draft.category === 'bug') {
-    const params = new URLSearchParams({
-      template: 'bug_report.yml',
-      title: draft.title,
-      version: draft.version || 'unknown',
-      model: draft.llmProvider ? `${draft.llmProvider}${draft.llmModel ? ` / ${draft.llmModel}` : ''}` : '未知',
-      platform: platformLabel(draft.os),
-      source: '不相关 / N/A',
-      what: publicLines(draft),
-    })
-    return `https://github.com/zhouxiaoka/autoclip/issues/new?${params}`
-  }
-  const params = new URLSearchParams({
-    category: draft.category === 'idea' ? 'ideas' : 'q-a',
-    title: draft.title,
-    body: publicLines(draft),
-  })
-  return `https://github.com/zhouxiaoka/autoclip/discussions/new?${params}`
+export function githubFallbackUrl(_draft: FeedbackDraft): string {
+  return ''
 }

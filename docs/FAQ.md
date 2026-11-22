@@ -1,167 +1,167 @@
-# 常见问题与排错
+# FAQ and troubleshooting
 
-[English](FAQ.en.md) · [安装指南](USER_INSTALLATION_GUIDE.md) · [返回首页](../README.md)
+[Installation](USER_INSTALLATION_GUIDE.en.md) · [README](../README.md)
 
-## 费用、模型与数据
+## Cost, models, and data
 
-### AutoClip 收费吗？必须有 API Key 吗？
+### Is AutoClip free? Do I need an API key?
 
-AutoClip 本身仍然免费、开源（MIT）。云端模型调用由你选择的服务商计费，价格、额度和可用模型以服务商为准。Ollama / LM Studio 本地预设无需云端 API Key，但需要下载模型并具备相应硬件；本地 Whisper 也需要单独安装组件和语音模型。
+AutoClip itself stays free and open source under MIT. Cloud model providers bill their own usage; consult your provider for pricing, quotas, and model availability. Ollama / LM Studio presets need no cloud API key, but require downloaded models and suitable hardware. Local Whisper needs separate speech components and model files.
 
-自 **v1.3.2** 起，海外发布需要你自己的 [Upload-Post](https://www.upload-post.com) 账号。免费档、付费档，以及 TikTok、YouTube、Instagram 等平台的每日额度，以 Upload-Post 自己的页面为准，不是 AutoClip 的承诺。
+As of **v1.3.2**, overseas publishing needs your own [Upload-Post](https://www.upload-post.com) account. Free and paid tiers, and daily caps for TikTok, YouTube, Instagram, and other platforms, follow Upload-Post’s own pages. They are not AutoClip promises.
 
-### 视频会上传吗？可以离线使用吗？
+### Are videos uploaded? Can I work offline?
 
-剪辑与渲染留在你的设备上，视频也保存在本机。字幕路线会把相关字幕或文案发给所选云端服务商。启用云端视觉模型时，会发送抽样画面及必要文字，费用取决于该服务商。成片只有在你点「发布」之后才会离开这台机器，发到你已经连接的平台。也可以只下载、不发布。匿名使用统计和错误报告取决于版本、构建配置和设置，详见 [隐私说明](PRIVACY.md)。发布页自 **v1.3.2** 起可用。
+Cutting and rendering stay on your device, and the video stays there too. The subtitle route sends the relevant subtitles or copy to your selected cloud provider. A cloud visual model also sends sampled frames and the necessary text. Fees depend on that provider. The finished clip leaves the machine only after you click Publish, and only to the platforms you connected. You can also download it without publishing. Usage analytics and error reporting depend on the version, build configuration, and settings; see the [privacy notes](PRIVACY.en.md). The Publish page is available in **v1.3.2**.
 
-准备好本地视频、语言模型及语音模型后，核心本地处理无需云端模型服务。视频下载、组件安装、模型下载和更新仍需要网络。不要把“本地处理”理解为所有功能都不联网。
+Once you have local footage, a local language model, and any required speech model, core local processing does not need a cloud model service. Video downloads, component installation, model downloads, and updates still need internet access. Local processing does not mean that every feature is offline.
 
-### 哪些视频比较适合？
+### What footage works best?
 
-默认路线是字幕分析，对白清楚的访谈、播客、课程、口播和直播回放比较合适。游戏录屏可以按画面剪辑：在「设置 → 服务商与模型」换一个能看图的模型。抽样画面会发给该模型，按服务商计费。单一样本不代表所有游戏；输出仍需人工检查边界、裁切和文案，不承诺广告投放效果。音乐或其他主要依赖画面、又没有换成能看图模型的内容，单靠字幕可能无法识别精彩点。没有固定出片数量或效果保证。
+Subtitle analysis is the default, so interviews, podcasts, lectures, spoken commentary, and livestream recordings with clear speech are a good fit. Gameplay can be cut from the picture: in Settings → Providers and models, switch to a vision-capable model. Sampled frames are sent to that model and billed by the provider. One sample game does not stand for every game. Review boundaries, crops, and copy yourself. There is no claim about ad performance. Music or other picture-led footage, without a vision-capable model, may not have enough subtitle information to identify highlights. There is no guaranteed clip count or quality.
 
-第一次想先看效果：首页还没有项目时，点「用示例项目看看效果」。示例随安装包附带（`source.mp4` 与 `source.srt`），不需要 API Key，也不是单独的样片压缩包。
+To see a result before you configure anything: when the home screen has no projects, click "Try Example Project" (See an example project). The example ships inside the installer (`source.mp4` and `source.srt`) and needs no API key. It is not a separate sample download.
 
-之后再用自己有权使用的短片：3–5 分钟、对白清楚，最好带时间轴准确的 `.srt`。来源用本地文件或 B 站。
+After that, use your own 3–5 minute clip with clear speech, preferably with an accurately timed `.srt`. Use a local file or Bilibili, and confirm that you have the right to use it.
 
-准备步骤见 [安装指南 · 先看示例，再用自己的短片](USER_INSTALLATION_GUIDE.md#先看示例再用自己的短片)，卡点见 [讨论 #128](https://github.com/zhouxiaoka/autoclip/discussions/128)。
+Setup steps are in the [installation guide](USER_INSTALLATION_GUIDE.en.md#see-the-example-then-use-your-own-clip); sticking points are in [Discussion #128](https://github.com/zhouxiaoka/autoclip/discussions/128).
 
-## 安装与启动
+## Installation and startup
 
-### 应该下载哪个文件？
+### Which file should I download?
 
-[Releases](https://github.com/zhouxiaoka/autoclip/releases/latest) 中，Apple Silicon Mac 选 `aarch64.dmg`，Windows x64 选 `x64-setup.exe`。Intel Mac 目前没有桌面安装包，与 Linux 一样使用 Docker 或 CLI。以每次 Release 的实际资产为准，`Source code` 不是桌面安装包。第一次出片用应用里的「用示例项目看看效果」，示例在安装包内。
+In [Releases](https://github.com/zhouxiaoka/autoclip/releases/latest), choose `aarch64.dmg` for Apple Silicon Mac or `x64-setup.exe` for Windows x64. There is no Intel Mac desktop build; use Docker or the CLI, the same as Linux. Check the actual release assets; `Source code` is not a desktop installer. For a first look, use "Try Example Project" in the app. The example is inside the installer.
 
-macOS 15 及以上首次打开：双击一次，若被拦截则到「系统设置 → 隐私与安全性 → 仍要打开」（[Apple 说明](https://developer.apple.com/news/?id=saqachfa)）。较旧的 macOS 可右键应用 →「打开」。Windows 若出现 SmartScreen，点「更多信息 → 仍要运行」。日常运行不需要管理员权限。详见 [安装指南](USER_INSTALLATION_GUIDE.md)。
+On macOS 15 and later, double-click once. If macOS blocks the app, open System Settings → Privacy & Security → Open Anyway ([Apple’s note](https://developer.apple.com/news/?id=saqachfa)). On older macOS, right-click the app and choose Open. If Windows SmartScreen appears, choose More info → Run anyway. Routine use does not require administrator privileges. Details are in the [installation guide](USER_INSTALLATION_GUIDE.en.md).
 
-### 空白页、后端未启动或连接失败怎么办？
+### What if the app is blank or cannot connect to the backend?
 
-1. 完全退出后重新启动一次，保留数据目录。
-2. 检查磁盘空间，记录界面上的具体错误和发生阶段。
-3. 桌面后端端口由启动器管理，查看实际启动日志，不要假设一直是 8000。Docker 默认 Web 端口为 3000、API 端口为 8000。
-4. Web 模式下若开启了浏览器网页翻译，先关闭翻译再刷新。
-5. Docker 用户执行 `docker compose ps` 和 `docker compose logs --tail=100 autoclip celery-worker`，参见 [Docker 指南](../DOCKER.md)。
+1. Exit fully and restart once, preserving your data directory.
+2. Check free disk space and note the exact error and failed stage.
+3. Desktop backend ports are managed by the launcher; inspect startup logs instead of assuming port 8000. Docker defaults to port 3000 for the web UI and 8000 for the API.
+4. In web mode, disable browser page translation and refresh if it was enabled.
+5. For Docker, run `docker compose ps` and `docker compose logs --tail=100 autoclip celery-worker`; see the [Docker guide](DOCKER.en.md).
 
-### 模型连接测试失败怎么办？
+### Why does the model connection test fail?
 
-确认提供商、模型名、API Key、Base URL 与区域设置一致，账号拥有该模型权限。Ollama / LM Studio 要先启动服务并加载模型。本地服务默认地址分别是 `http://localhost:11434/v1` 和 `http://localhost:1234/v1`。
+Check that the provider, model name, API key, Base URL, and region match, and that your account has access to the model. Start Ollama / LM Studio and load the model first. Default endpoints are `http://localhost:11434/v1` and `http://localhost:1234/v1` respectively.
 
-Docker 中的 `localhost` 是容器自己。宿主机模型服务的访问方式见 [Docker 指南](../DOCKER.md)。若出现代理、TLS 或超时错误，检查具体连接目标和网络配置；不要在反馈中粘贴完整 API Key。
+Inside Docker, `localhost` refers to the container. See the [Docker guide](DOCKER.en.md) for host model access. For proxy, TLS, or timeout errors, check the actual destination and network configuration. Never include a full API key in a report.
 
-## 字幕、分析与导出
+## Subtitles, analysis, and export
 
-### 字幕分析和游戏视觉分析怎么选？
+### How do I choose subtitle analysis or game visual analysis?
 
-自 **v1.4.0** 起有两条路线。字幕分析仍是默认，旧配置也默认字幕模式。按画面剪辑时，在「设置 → 服务商与模型」选用能看图的模型。确认后，视觉路线识别录屏中的独立事件，生成可编辑高光与推广草稿，再在共用编辑器里修改。未确认的导入可恢复；确认后才正式理解和剪辑。
+As of **v1.4.0** there are two routes. Subtitle analysis stays the default, including for existing settings. To cut from the picture, choose a vision-capable model in Settings → Providers and models. After you confirm, the visual route finds separate events in a gameplay recording, produces editable highlights and promo drafts, and you edit them in the shared editor. An unconfirmed import can be resumed. Understanding and cutting start only after confirmation.
 
-单一样本不代表所有游戏质量。输出仍需人工检查边界、裁切和文案，不承诺广告投放效果。v1.4.0 不含 CTA 动效、生成式品牌尾卡、卡拉 OK / 逐词字幕。
+One sample game does not stand for every game. Review boundaries, crops, and copy yourself. There is no claim about ad performance. v1.4.0 does not include CTA motion, generative brand end cards, or karaoke / word-level subtitles.
 
-### 视觉分析怎么计费？会发出画面吗？
+### How is visual analysis billed? Are frames sent?
 
-剪辑与渲染在本机完成。字幕路线发送相关字幕或文案。使用云端视觉模型会发送抽样画面及必要文字。费用取决于所选服务商，没有统一标价。本地 Ollama / LM Studio 不经过云端计费，但仍需要你自己的模型和硬件。未确认导入不会开始正式理解和剪辑。
+Cutting and rendering stay on your machine. The subtitle route sends the relevant subtitles or copy. A cloud visual model sends sampled frames and the necessary text. Fees depend on the provider you chose; there is no single price. Local Ollama / LM Studio presets are not billed by a cloud provider, but they still need your own models and hardware. An unconfirmed import does not start understanding or cutting.
 
-### 没有字幕怎么办？支持什么字幕格式？
+### What if I have no subtitles? Which format can I import?
 
-首页的本地上传入口支持可选 `.srt`。没有可用字幕、本地 Whisper 装不上或太慢时，可以改用百炼云端转写（`qwen-audio-3.1-asr-flash`，大约 0.1 元/小时音频，具体以阿里云账单为准）。音频会上传到云端。
+Local file import accepts an optional `.srt`. When the source has no subtitles, or local Whisper will not install or is too slow, switch to Bailian cloud transcription (`qwen-audio-3.1-asr-flash`, about 0.1 yuan per hour of audio; the Alibaba Cloud bill is the actual charge). The audio is uploaded to the cloud.
 
-打开「设置 → 默认模型 → 语音转字幕」，选择这个云端模型。导入被拦住时，点「改用云端转写」。
+Open Settings → Default models → “Speech to subtitles” and choose that model. If import is blocked, click “Use cloud transcription instead”.
 
-百炼 API Key 分两步：
+Create a Bailian API key in two steps:
 
-1. 先用作者推荐链接注册或领优惠：<https://www.aliyun.com/benefit?userCode=qmyj6jch>
-2. 再到 <https://bailian.console.aliyun.com/> 创建 API Key，回到设置里填写。
+1. Register or claim the offer with the author’s recommendation link: <https://www.aliyun.com/benefit?userCode=qmyj6jch>
+2. Then create the API key at <https://bailian.console.aliyun.com/> and paste it into Settings.
 
-也可以继续用本机 Whisper。没有字幕的视频，第一次要下载本地转写组件（约 220 MB，国内网络约 15 分钟）。不想等可以改用云端转写。CLI 环境可安装 `faster-whisper`。其他字幕格式建议先转换为带正确时间轴的 SRT，不假设上传入口支持所有格式。
+You can still use local Whisper. A video without subtitles has to download the local transcription component the first time (about 220 MB, about 15 minutes on a slow network). If you don't want to wait, switch to cloud transcription. CLI users can install `faster-whisper`. Convert other subtitle formats to accurately timed SRT rather than assuming every format is accepted.
 
-### 在 Windows 上安装 Whisper 仍提示 mlx-whisper 仅支持 Apple Silicon？
+### What if installing Whisper on Windows still says mlx-whisper only supports Apple Silicon?
 
-在「设置 → 默认模型 → 语音转字幕」安装本机 Whisper 时，若 Windows 或其他非 Mac 仍出现红色错误「mlx-whisper 仅支持 Apple Silicon (macOS)」，请更新到 **v1.3.3** 或更新（含 [#145](https://github.com/zhouxiaoka/autoclip/pull/145)）。桌面版用「设置 → 应用 → 检查更新」，或到 [Releases](https://github.com/zhouxiaoka/autoclip/releases) 下载。旧版会误报并拦住安装；更新后再安装即可。见 [#141](https://github.com/zhouxiaoka/autoclip/issues/141)。
+If installing local Whisper from Settings → Default models → “Speech to subtitles” still shows the red error 「mlx-whisper supports only Apple Silicon (macOS)」 on Windows or any other non-Mac system, update to **v1.3.3** or later (includes [#145](https://github.com/zhouxiaoka/autoclip/pull/145)). On desktop, use Settings → Application → Check for updates, or download it from [Releases](https://github.com/zhouxiaoka/autoclip/releases). Older builds showed that message and blocked the install by mistake. After you update, install again. See [#141](https://github.com/zhouxiaoka/autoclip/issues/141).
 
-### 为什么没有生成片段？
+### Why were no clips generated?
 
-先看项目错误提示，再按失败阶段排查：
+Read the project error first, then check the failed stage:
 
-| 阶段 | 优先检查 |
+| Stage | Check first |
 | --- | --- |
-| 字幕 / SUBTITLE | 字幕是否为空、时间轴是否与视频对应、Whisper 是否就绪 |
-| 分析 / ANALYZE | 模型连接是否成功、返回是否可解析、字幕是否有足够内容。时间线为空时，仍需检查字幕内容和模型返回；自 **v1.3.5** 起，这种情况不再只提示去改模型设置 |
-| 评分 | 是否有候选片段、阈值是否过高；可尝试从 0.7 降到 0.5 后重新处理 |
-| 导出 / EXPORT | FFmpeg 是否可用、磁盘是否充足、输出目录是否可写 |
+| SUBTITLE | Empty subtitles, timing mismatch, or missing Whisper components/model |
+| ANALYZE | Model connectivity, parseable output, and sufficient subtitle content. An empty timeline still needs a check of the subtitles and the model response. As of **v1.3.5**, that case no longer points you only at model settings |
+| Scoring | Whether candidates exist and the threshold is too high; try reducing it from 0.7 to 0.5 and processing again |
+| EXPORT | FFmpeg availability, free disk space, and write permission on the output directory |
 
-CLI 可先检查环境，再用较低阈值验证：
+Check the CLI environment, then try a lower threshold:
 
 ```bash
 autoclip doctor --provider ollama
 autoclip run talk.mp4 --provider ollama --srt talk.srt --min-score 0.5 --json
 ```
 
-把示例文件名和模型选项换成实际配置；没有 SRT 时去掉 `--srt talk.srt` 并确保转写已就绪。降低阈值只影响筛选，不保证一定有片段。第一次验证用首页的「用示例项目看看效果」，或用自己的短片。用法上仍不清楚时，到 [第一次出片问答](https://github.com/zhouxiaoka/autoclip/discussions/128) 讨论。能复现的故障仍开 Issue。
+Replace the filenames and provider with your actual setup. Without SRT, remove `--srt talk.srt` and prepare transcription first. Lowering the threshold changes selection; it does not guarantee clips. For a first check, use "Try Example Project" on the home screen, or a clip you provide. If usage is still unclear, continue in the [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128). Reproducible bugs still belong in Issues.
 
-### 处理慢、内存不足怎么办？
+### Why is processing slow or using too much memory?
 
-先区分视频下载、转写、模型分析和 FFmpeg 导出哪个阶段慢。用短视频验证；关闭不必要的并发任务，尝试更小的本地模型，并检查可用内存与磁盘。转写模型首次下载可能耗时较长；重试前确认旧任务是否仍在运行。处理时间随硬件、时长、模型和导出设置变化，没有统一的“每小时视频几分钟”承诺。
+Identify whether downloading, transcription, model analysis, or FFmpeg export is slow. Try a short video, reduce concurrent jobs, try a smaller local model, and check free memory and disk space. Initial speech model downloads can take time. Before retrying, check whether the previous job is still running. There is no fixed processing time per hour of video.
 
-### 下载 YouTube / B 站视频失败怎么办？
+### Why does a YouTube / Bilibili download fail?
 
-先确认链接可在浏览器打开、当前账号有权访问，必要时配置该平台的登录凭据。CLI / 源码环境可检查 yt-dlp 版本，桌面用户先检查新版本。也可以使用有权获取的本地文件继续处理。不要在 Issue 或邮件中发送 Cookies。
+Check that the link opens in your browser and that your account has access. Configure platform login credentials when necessary. CLI / source users can check their yt-dlp version; desktop users should check for a newer release. You can also import a local file you are authorized to obtain. Do not send Cookies in issues or email.
 
-### 原始切片和发布导出有什么区别？
+### How do source clips differ from publishing exports?
 
-切片是根据时间范围从原视频生成的片段；发布导出会按预设进一步渲染，例如竖屏布局、烧录字幕和标题卡。生成切片后仍需执行导出，并播放检查结果。
+Clips are segments cut from the source video using time ranges. Publishing export applies a preset, such as vertical layout, burned-in subtitles, and title cards. After generating clips, run export and play the result to check it.
 
 ```bash
 autoclip export PROJECT_ID --preset shorts
 ```
 
-`PROJECT_ID` 替换为真实项目 ID。其他预设包括 `douyin`、`xiaohongshu`、`bilibili` 和 `original`，详见 [CLI / MCP 指南](CLI_AND_MCP.md)。
+Replace `PROJECT_ID` with the actual project ID. Other presets include `douyin`, `xiaohongshu`, `bilibili`, and `original`; see the [CLI / MCP reference](CLI_AND_MCP.md) (Chinese).
 
-### v1.3.2 的发布页怎么用？
+### How does the v1.3.2 Publish page work?
 
-自 **v1.3.2** 起可用。
+Available in **v1.3.2**.
 
-切片就绪后，在切片上打开发布。海外和 B 站在同一页：
+After clips are ready, open Publish on a clip. Overseas platforms and Bilibili share that page:
 
-- 海外平台走你自己的 Upload-Post 账号，以及你在那里连接的平台。范围是 TikTok、Instagram、YouTube、Facebook、LinkedIn、X、Threads、Pinterest、Bluesky、Discord、Telegram、Google Business，以该账号实际连接的为准。
-- B 站在设置里粘贴一次 Cookie。Cookie 须包含 `SESSDATA`、`bili_jct`、`DedeUserID`。一个 B 站账号。
+- Overseas platforms use your own Upload-Post account and the platforms you connected there: TikTok, Instagram, YouTube, Facebook, LinkedIn, X, Threads, Pinterest, Bluesky, Discord, Telegram, and Google Business, as available on that account.
+- Bilibili is one account. Paste a Cookie once in Settings. It must include `SESSDATA`, `bili_jct`, and `DedeUserID`.
 
-可以现在发，也可以定时。B 站的定时须晚于现在两小时。标题和描述可以不填，默认用切片标题。字幕烧录默认打开。片头约 4 秒的标题卡默认打开。可见范围在平台支持时默认「仅自己」。AutoClip 对外只对 TikTok、YouTube、B 站承诺仅自己 / private。也可以只下载成片、不发布。
+Publish now or on a schedule. A Bilibili schedule must be more than two hours ahead. Title and description are optional and default to the clip title. Burned-in captions default on. The title card, about four seconds at the start, defaults on. Visibility defaults to private / self where the platform supports it. AutoClip promises that only for TikTok, YouTube, and Bilibili. You can download the file without publishing.
 
-项目页可以查看发布记录和月历，并取消尚未发出的排期。「排这一周」只排海外平台，把还没发的切片填进周一、周三、周五的 09:00，不包含 B 站。
+The project page shows publish history and a calendar, and can cancel a schedule that has not gone out. “Plan this week” is overseas only: it fills unpublished clips into Monday, Wednesday, and Friday at 09:00. It does not include Bilibili.
 
-画幅跟着要发的账号：有竖屏账号时渲成 9:16，不按 60 秒截断。只发 B 站时用横屏。只有 LinkedIn、X 这类横屏账号时用原画。竖屏和 B 站放在同一次时，各自单独渲染。
+Aspect follows the accounts you send to. Vertical accounts render 9:16 without a 60-second cut. Bilibili alone renders landscape. LinkedIn or X alone keeps the original frame. Vertical and Bilibili in the same batch are rendered separately.
 
-发布时可自动生成封面，避免 B 站空封面被拒。默认封面和标题卡的细节随本版安装包说明。自 **v1.3.2** 起可用。
+When you publish, a cover can be generated automatically so Bilibili does not reject an empty cover. Default cover and title-card details follow that release’s installer notes. Available in **v1.3.2**.
 
-## 更新、备份与反馈
+## Updates, backups, and support
 
-### 数据存在哪里？如何备份？
+### Where is my data? How do I back it up?
 
-桌面默认目录见 [安装指南](USER_INSTALLATION_GUIDE.md)。Docker 使用仓库下的 `data/`、`logs/`、`uploads/` 绑定目录。退出应用或停止服务后，备份数据库、项目文件与配置，避免运行中只复制 SQLite 主文件。不要依赖未经确认的自动备份，也不要为了排错删除原始数据。
+See the [installation guide](USER_INSTALLATION_GUIDE.en.md) for desktop defaults. Docker uses the repository’s `data/`, `logs/`, and `uploads/` bind mounts. Exit the app or stop services before backing up the database, project files, and settings; do not copy only the main SQLite file while jobs are running. Do not assume automatic backups exist, or delete source data to troubleshoot.
 
-### 升级后项目列表打不开
+### Project list fails after an upgrade
 
-桌面端和 Docker 的项目状态、类型存在 SQLite 的文本列里。服务按枚举**名字**读取（`PENDING`、`KNOWLEDGE`）。库里若还有当前版本对不上的值，整页列表会加载失败。已知的一类旧值是已经从代码移除的 `cancelled` / `CANCELLED`；写成小写 value（`pending`）时也会对不上。
+Desktop and Docker store project status and type in SQLite text columns. The service reads enum **names** (`PENDING`, `KNOWLEDGE`). A value the current version does not know fails the entire list. One known leftover is `cancelled` / `CANCELLED`, removed from the code earlier. Lowercase values such as `pending` also fail that lookup.
 
-自 **v1.3.3** 起，服务启动时自动改写这两个字段。项目记录保留：
+Starting with **v1.3.3**, startup rewrites those two columns. Project rows stay in place:
 
-- 能对上的 value 改成枚举名，例如 `pending` → `PENDING`
-- 无法识别的状态（含 `cancelled`）改为 `FAILED`
-- 无法识别的项目类型改为 `DEFAULT`
+- A matching value becomes the enum name, for example `pending` → `PENDING`
+- An unrecognized status, including `cancelled`, becomes `FAILED`
+- An unrecognized project type becomes `DEFAULT`
 
-升级后重新打开应用，项目列表应能打开。被改写的项目会显示为失败或默认类型。升级前若要自己看一眼：
+Reopen the app after upgrading and the project list should load. Rewritten projects show as failed or as the default type. To inspect before upgrading:
 
 ```sql
 SELECT status, COUNT(*) FROM projects GROUP BY status;
 SELECT project_type, COUNT(*) FROM projects GROUP BY project_type;
 ```
 
-### 哪里看已知问题？怎样联系？
+### Where are known issues? How can I get help?
 
-先查 [已知问题](https://github.com/zhouxiaoka/autoclip/issues/96) 和 [版本记录](https://github.com/zhouxiaoka/autoclip/releases)。希望增加的能力、用法和模型发到 [Discussions](https://github.com/zhouxiaoka/autoclip/discussions)：[欢迎与分类](https://github.com/zhouxiaoka/autoclip/discussions/127)、[第一次出片问答](https://github.com/zhouxiaoka/autoclip/discussions/128)、[想法](https://github.com/zhouxiaoka/autoclip/discussions/129)。能复现的故障开 Issue。规则见 [社区看板](COMMUNITY_BOARD.md)。仍需联系时，将以下信息一次性发到 [christine_zhouye@163.com](mailto:christine_zhouye@163.com)：
+Check [known issues](https://github.com/zhouxiaoka/autoclip/issues/96) and [release notes](https://github.com/zhouxiaoka/autoclip/releases) first. Feature ideas and how you use AutoClip go to [Discussions](https://github.com/zhouxiaoka/autoclip/discussions): [welcome and categories](https://github.com/zhouxiaoka/autoclip/discussions/127), [first-clip Q&A](https://github.com/zhouxiaoka/autoclip/discussions/128), and [ideas](https://github.com/zhouxiaoka/autoclip/discussions/129). Reproducible bugs go to Issues. The board rules are in the [community board](COMMUNITY_BOARD.md) (Chinese). If needed, send one email to [christine_zhouye@163.com](mailto:christine_zhouye@163.com) with:
 
-- 系统和 CPU 架构、AutoClip 版本、桌面 / Docker / CLI 使用方式。
-- 模型提供商、模型名、视频来源与大致时长、是否提供字幕。
-- 复现步骤、失败阶段、错误截图或最近的相关日志。
-- 日志中移除 API Key、Cookies、私人路径和不希望公开的字幕内容。
+- OS and CPU architecture, AutoClip version, and desktop / Docker / CLI mode.
+- Model provider and name, video source and approximate duration, and whether subtitles were supplied.
+- Reproduction steps, failed stage, and an error screenshot or relevant recent logs.
+- API keys, Cookies, private paths, and private transcript text removed from the logs.
 
-个人业余维护，回复时间不固定，不提供即时客服或一对一部署服务。
+Maintained by an individual in their spare time. Response times vary; live support and one-to-one deployment assistance are not provided.

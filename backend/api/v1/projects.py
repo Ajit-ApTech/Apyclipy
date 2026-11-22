@@ -1486,3 +1486,38 @@ async def download_clip_export(project_id: str, job_id: str):
     if not path.exists():
         raise HTTPException(status_code=404, detail="导出文件不存在")
     return FileResponse(path=str(path), media_type="video/mp4", filename=path.name)
+
+
+@router.post("/{project_id}/cancel")
+async def cancel_project_processing(
+    project_id: str,
+    project_service: ProjectService = Depends(get_project_service)
+):
+    """Cancel any active downloading or processing for this project."""
+    from backend.core.project_cancellation import cancel, clean_temporary
+    cancel(project_id)
+    clean_temporary(project_id)
+
+    # Clean partial files (.part, .ytdl) in the project directory
+    from backend.core.path_utils import get_project_directory
+    proj_dir = get_project_directory(project_id)
+    if proj_dir.exists():
+        for f in proj_dir.glob("**/*.part"):
+            try: f.unlink(missing_ok=True)
+            except Exception: pass
+        for f in proj_dir.glob("**/*.ytdl"):
+            try: f.unlink(missing_ok=True)
+            except Exception: pass
+
+    # Update project status in DB
+    project = project_service.get(project_id)
+    if project:
+        config = dict(project.processing_config or {})
+        config['download_status'] = 'cancelled'
+        config['error'] = 'Download cancelled by user'
+        project.processing_config = config
+        project.status = ProjectStatus.FAILED
+        project_service.db.commit()
+
+    return {"status": "success", "message": "Project cancelled successfully"}
+

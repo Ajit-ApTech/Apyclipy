@@ -26,7 +26,7 @@ const Header: React.FC = () => {
   return (
     <AntHeader
       style={{
-        padding: '0 clamp(12px, 4vw, 56px)',
+        padding: '0 clamp(16px, 4vw, 56px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -36,30 +36,39 @@ const Header: React.FC = () => {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        backdropFilter: 'blur(10px)',
-        background: 'color-mix(in srgb, var(--ac-bg) 78%, transparent)',
-        borderBottom: '1px solid var(--ac-line-2)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        background: 'color-mix(in srgb, var(--ac-bg) 82%, transparent)',
+        borderBottom: '1px solid var(--ac-line)',
+        transition: 'background var(--ac-t-smooth) ease, border-color var(--ac-t-smooth) ease',
       }}
     >
-      {/* Wordmark — serif, italic "Clip" */}
+      {/* Wordmark — Apyclipy */}
       <div
-        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', transition: 'opacity var(--ac-t-micro) ease' }}
         onClick={() => navigate('/')}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
       >
         <span
           style={{
-            fontFamily: 'var(--ac-font-serif)',
-            fontSize: '26px',
+            fontFamily: 'var(--ac-font-sans)',
+            fontWeight: 700,
+            fontSize: '23px',
             color: 'var(--ac-ink)',
-            letterSpacing: '0.3px',
+            letterSpacing: '-0.03em',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '2px',
           }}
         >
-          Auto<em style={{ fontStyle: 'italic' }}>Clip</em>
+          <span style={{ color: 'var(--ac-accent)', marginRight: '3px', fontSize: '18px' }}>✦</span>
+          Apy<span style={{ color: 'var(--ac-accent)' }}>clipy</span>
         </span>
       </div>
 
       {/* Right side */}
-      <div className="ac-header-actions">
+      <div className="ac-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {keepAwakeHeld && (
           <span
             className="ac-keep-awake-pill"
@@ -70,14 +79,21 @@ const Header: React.FC = () => {
               color: 'var(--ac-sub)',
               border: '1px solid var(--ac-line)',
               borderRadius: '999px',
-              padding: '4px 10px',
+              padding: '4px 12px',
               background: 'var(--ac-card)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
               whiteSpace: 'nowrap',
               maxWidth: '42vw',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              boxShadow: 'var(--ac-shadow-sm)',
             }}
-          >{t('制作中，已阻止休眠')}</span>
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ac-ok)', display: 'inline-block' }} />
+            {t('制作中，已阻止休眠')}
+          </span>
         )}
         {updatePending && (
           <div className="ac-update-anchor">
@@ -93,9 +109,8 @@ const Header: React.FC = () => {
             <UpdateToast />
           </div>
         )}
-        <div className="ac-header-permanent">
+        <div className="ac-header-permanent" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <LanguageSelect />
-        {/* 返回入口由各页面页头承担（见 DESIGN.md App Layer），顶栏只留全局动作 */}
         <Button
           type="text"
           icon={theme === 'dark' ? <BulbOutlined /> : <MoonOutlined />}
@@ -110,6 +125,8 @@ const Header: React.FC = () => {
             height: '36px',
             padding: 0,
             background: 'var(--ac-card)',
+            boxShadow: 'var(--ac-shadow-sm)',
+            transition: 'all var(--ac-t-micro) ease',
           }}
         />
         <Button
@@ -124,6 +141,9 @@ const Header: React.FC = () => {
             height: '36px',
             padding: '0 16px',
             background: isSettings ? 'var(--ac-line-2)' : 'var(--ac-card)',
+            fontWeight: 500,
+            boxShadow: 'var(--ac-shadow-sm)',
+            transition: 'all var(--ac-t-micro) ease',
           }}
         >{t("设置")}</Button>
         </div>

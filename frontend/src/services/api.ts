@@ -412,6 +412,12 @@ export const projectApi = {
     await api.delete(`/projects/${id}`)
   },
 
+  // 取消项目下载/处理
+  cancelProject: async (id: string): Promise<void> => {
+    await api.post(`/projects/${id}/cancel`)
+  },
+
+
   // 开始处理项目
   startProcessing: async (id: string): Promise<void> => {
     await observeOperation('processing', { project_id: id, action: 'start' }, () => api.post(`/projects/${id}/process`),
@@ -766,7 +772,13 @@ export const bilibiliApi = {
   // 获取所有YouTube下载任务
   getAllYouTubeTasks: async (): Promise<BilibiliDownloadTask[]> => {
     return api.get('/youtube/tasks')
+  },
+
+  // 取消YouTube下载任务
+  cancelYouTubeTask: async (taskId: string): Promise<any> => {
+    return api.post(`/youtube/tasks/${taskId}/cancel`)
   }
+
 }
 
 // 系统状态相关API

@@ -1,11 +1,11 @@
-# 日志文件
+# Log files
 logs/
 *.log
 backend.log
 celery.log
 frontend/frontend.log
 
-# Python缓存
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
@@ -17,13 +17,13 @@ __pycache__/
 htmlcov/
 coverage.xml
 
-# 虚拟环境
+# Virtual environments
 venv/
 env/
 .venv/
 venv_*/
 
-# 视频和媒体文件
+# Video and media files
 *.mp4
 *.mkv
 *.avi
@@ -33,14 +33,14 @@ venv_*/
 *.webm
 *.m4v
 *.3gp
-# 随包提供的示例项目原片（17 MB，backend/services/example_project.py）
+# Bundled example video
 !backend/assets/example/source.mp4
-# 随包提供的片尾动画（backend/services/output_branding.py，源文件见 design/outro-v5）
+# Outro animation
 !backend/assets/outro/*.mp4
-# 剪辑风格卡片的静音预览（2.5 秒，无音轨）
+# Editing style preview assets
 !frontend/src/assets/editing-style/*.mp4
 !frontend/src/assets/editing-style/*.webm
-# 导入页剪辑风格选择器的验收截图和交互录屏
+# Preview screenshots
 !docs/images/editing-style-picker/*.mp4
 *.mp3
 *.wav
@@ -49,13 +49,13 @@ venv_*/
 *.ogg
 *.wma
 
-# 压缩文件
+# Archives
 *.zip
 *.tar.gz
 *.rar
 *.7z
 
-# 模型文件
+# Model files
 *.pt
 *.ckpt
 *.pth
@@ -63,39 +63,25 @@ venv_*/
 *.pkl
 *.joblib
 
-# 数据库文件
-*.db
-*.sqlite
-*.sqlite3
-data/autoclip.db
-data/progress.db
-data/*.json
-data/*.port
-
-# 项目数据目录（包含用户上传的视频和生成的文件）
-data/projects/
-data/uploads/
-data/temp/
-data/output/
-data/backups/
-data/cache/
-data/shutdown_markers/
+# Database and runtime data directory
+data/
 backend/data/
+resources/
 
-# 前端依赖与构建产物
+# Frontend dependencies & build artifacts
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
-# Rust / Tauri 构建产物
+# Rust / Tauri build artifacts
 target/
 src-tauri/target/
 src-tauri/gen/
 src-tauri/.updater-private-key
 src-tauri/.updater-public-key
 
-# Python / 打包产物
+# Python packaging artifacts
 build/
 dist/
 *.mcpb
@@ -111,7 +97,7 @@ src-tauri/resources/ffmpeg-unified/
 src-tauri/resources/requirements.txt
 src-tauri/resources/autoclip-backend/
 
-# 系统文件
+# System files
 .DS_Store
 .DS_Store?
 ._*
@@ -120,14 +106,14 @@ src-tauri/resources/autoclip-backend/
 ehthumbs.db
 Thumbs.db
 
-# IDE文件
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# 环境变量文件
+# Environment variable files
 .env
 .env.local
 .env.development.local
@@ -137,25 +123,25 @@ Thumbs.db
 .env.*.backup
 .env.sentry-build-plugin
 
-# 本地归档与备份（仅本地保留，不入仓）
+# Local backups
 cleanup_backup/
 archive_local/
 local_backups/
 
-# 进程ID文件
+# Process ID files
 *.pid
 *.pid.json
 *.pid.tmp
 
-# Redis数据文件
+# Redis data files
 dump.rdb
 control/
 
-# 临时文件
+# Temporary files
 *.tmp
 *.temp
 *.bak
 .gstack/
 
-# Python 打包产物
+# Python build artifacts
 *.egg-info/

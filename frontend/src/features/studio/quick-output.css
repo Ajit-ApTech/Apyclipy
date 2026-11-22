@@ -17,39 +17,92 @@
 
 .studio-platform-options {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .studio-platform-option {
-  align-items: flex-start;
+  align-items: stretch;
   background: var(--ac-card);
   border: 1px solid var(--ac-line);
-  border-radius: 10px;
+  border-radius: var(--ac-radius-sm);
   color: var(--ac-ink);
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   font: inherit;
-  gap: 3px;
-  min-height: 58px;
-  padding: 10px 12px;
+  gap: 10px;
+  min-height: 74px;
+  padding: 12px 14px;
   text-align: left;
+  transition: transform var(--ac-t-micro) ease-out, border-color var(--ac-t-micro) ease-out, box-shadow var(--ac-t-micro) ease-out, background var(--ac-t-micro) ease-out;
 }
 
-.studio-platform-option b {
-  font-size: 13px;
-  font-weight: 500;
+.studio-platform-option:hover {
+  border-color: var(--ac-muted);
+  transform: translateY(-1px);
 }
 
-.studio-platform-option span {
-  color: var(--ac-sub);
-  font-size: 11px;
+.studio-platform-option:active {
+  transform: scale(0.985);
 }
 
 .studio-platform-option.is-selected {
   border-color: var(--ac-accent);
-  box-shadow: inset 0 0 0 1px var(--ac-accent);
+  background: color-mix(in srgb, var(--ac-accent) 6%, var(--ac-card));
+  box-shadow: 0 0 0 1px var(--ac-accent);
+}
+
+.studio-platform-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.studio-platform-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.studio-platform-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--ac-line);
+  font-size: 10px;
+  font-weight: 600;
+  color: transparent;
+  transition: all var(--ac-t-micro) ease-out;
+}
+
+.studio-platform-check.is-checked {
+  background: var(--ac-accent);
+  border-color: var(--ac-accent);
+  color: #ffffff;
+}
+
+.studio-platform-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.studio-platform-option-body b {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ac-ink);
+}
+
+.studio-platform-option-body span {
+  color: var(--ac-sub);
+  font-size: 11.5px;
+  line-height: 1.3;
 }
 
 .studio-branding-option {

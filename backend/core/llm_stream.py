@@ -634,7 +634,7 @@ def _note(state: dict[str, Any], *, chars: int, thinking: bool) -> None:
     kind = "content" if chars > 0 else "thinking" if thinking else ""
     if not kind:
         return
-    message = "模型思考中" if chars <= 0 else f"模型持续返回中（已接收 {chars} 字）"
+    message = "AI model thinking..." if chars <= 0 else f"AI model streaming in progress ({chars} chars received)"
     now = time.monotonic()
     if kind == state.get("kind") and now - float(state.get("note_at") or 0) < 2 and abs(chars - int(state.get("note_chars") or -1)) < 32:
         return

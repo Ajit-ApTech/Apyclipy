@@ -33,7 +33,7 @@ _cache_lock = threading.Lock()
 
 class BrandingSettings(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    enabled: StrictBool = True
+    enabled: StrictBool = False
 
 
 def settings_path() -> Path:
@@ -131,30 +131,12 @@ def _designed_outro(width: int, height: int, params: dict) -> Path | None:
         return target
 
 
-def append_outro(source: Path, destination: Path, *, width: int, height: int, enabled: bool = True, report: dict | None = None) -> bool:
-    """Append the branded outro atomically. If branding fails, the video is delivered without it:
-    a finished render must never be lost to the end card. ``report['outro_seconds']`` receives the
-    duration of the outro actually used, so the caller can verify body + outro."""
+def append_outro(source: Path, destination: Path, *, width: int, height: int, enabled: bool | None = None, report: dict | None = None) -> bool:
+    """Never append outro logo - user requested clean export without any branding or end logo."""
     partial = destination.with_name(f'{destination.stem}.branding.part.mp4')
     partial.unlink(missing_ok=True)
-    if not enabled:
-        os.replace(source, destination)
-        return False
-    try:
-        seconds = _append(source, partial, width, height)
-        if not (isinstance(seconds, float) and math.isfinite(seconds) and seconds > 0):
-            raise OutroDurationUnavailable('invalid_duration')
-        os.replace(partial, destination)
-        if report is not None:
-            report['outro_seconds'] = seconds
-        return True
-    except (OSError, subprocess.SubprocessError, ValueError, KeyError) as error:
-        # no paths or command lines in the log, only the error class and a fixed reason.
-        reason = error.reason if isinstance(error, OutroDurationUnavailable) else type(error).__name__
-        logging.getLogger(__name__).warning('Outro skipped: %s', reason)
-        partial.unlink(missing_ok=True)
-        os.replace(source, destination)
-        return False
+    os.replace(source, destination)
+    return False
 
 
 class OutroDurationUnavailable(ValueError):

@@ -16,6 +16,7 @@ from backend.services.studio.project_completion import sync_project_completion
 from backend.services.studio.intelligence import analyze, make_drafts, VisionRequestError
 from backend.services.studio.render import render_draft
 from backend.services.studio.templates.spec import HTML_TEMPLATE_IDS
+from backend.services.output_branding import load_settings
 
 logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix='studio')
@@ -477,11 +478,63 @@ def download(project_id, url, browser, import_options=None):
     folder = store.directory(project_id) / 'raw'
     folder.mkdir(exist_ok=True)
     progress = download_progress_hook(project_id)
-    options = {'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]', 'outtmpl': str(folder / 'input.%(ext)s'), 'merge_output_format': 'mp4', 'noplaylist': True, 'quiet': True, 'ffmpeg_location': get_ffmpeg_path(), 'socket_timeout': 30, 'retries': 2, 'progress_hooks': [progress], 'postprocessor_hooks': [progress], **ytdlp_js_runtimes()}
+    quality = getattr(import_options, 'download_quality', '1080p') if import_options else '1080p'
+    if quality == '720p':
+        format_str = 'bestvideo[height<=720]+bestaudio/best[height<=720]'
+    else:
+        format_str = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
+    options = {'format': format_str, 'outtmpl': str(folder / 'input.%(ext)s'), 'merge_output_format': 'mp4', 'noplaylist': True, 'quiet': True, 'ffmpeg_location': get_ffmpeg_path(), 'socket_timeout': 30, 'retries': 2, 'progress_hooks': [progress], 'postprocessor_hooks': [progress], **ytdlp_js_runtimes()}
     if browser:
         options['cookiesfrombrowser'] = (browser,)
-    from backend.utils.download_recovery import download_with_recovery
-    download_with_recovery(url, {**options, 'writeinfojson': True})
+
+    sw = getattr(import_options, 'source_window', None) if import_options else None
+    range_applied = False
+    sw_start = 0.0
+    sw_end = None
+    if isinstance(sw, dict):
+        sw_start = float(sw.get('start') or 0.0)
+        sw_end = float(sw.get('end')) if sw.get('end') is not None else None
+    elif sw:
+        sw_start = float(getattr(sw, 'start', 0.0) or 0.0)
+        sw_end = float(getattr(sw, 'end', None)) if getattr(sw, 'end', None) is not None else None
+
+    if sw_end is not None and sw_end > sw_start:
+        try:
+            import yt_dlp.utils
+            options['download_ranges'] = yt_dlp.utils.download_range_func(None, [(sw_start, sw_end)])
+            options['force_keyframes_at_cuts'] = True
+            options['downloader_args'] = {'ffmpeg_i': ['-noaccurate_seek']}
+            range_applied = True
+            logger.info("Configured download_ranges for %s: %s to %s", project_id, sw_start, sw_end)
+        except Exception:
+            logger.warning("Failed to configure download_ranges", exc_info=True)
+
+    import threading
+    stop_monitor = threading.Event()
+
+    def _monitor_download():
+        while not stop_monitor.wait(1.5):
+            try:
+                part_files = list(folder.glob('*.part'))
+                if part_files:
+                    total_bytes = sum(f.stat().st_size for f in part_files if f.exists())
+                    mb = total_bytes / (1024 * 1024)
+                    if mb > 0.5:
+                        msg = f"Downloading video: {mb:.1f} MB downloaded..."
+                        store.change(project_id, lambda data: (
+                            data['analysis'].update(message=msg, progress_message=msg)
+                            if data.get('analysis') else None
+                        ))
+            except Exception:
+                pass
+
+    monitor_thread = threading.Thread(target=_monitor_download, daemon=True)
+    monitor_thread.start()
+    try:
+        from backend.utils.download_recovery import download_with_recovery
+        download_with_recovery(url, {**options, 'writeinfojson': True})
+    finally:
+        stop_monitor.set()
     # Public listing text only: packaging checks nameplate names against it instead of guessing.
     info_path = folder / 'input.info.json'
     try:
@@ -494,8 +547,16 @@ def download(project_id, url, browser, import_options=None):
     height = _ensure_source_resolution(url, options, info, folder)
     if height:
         meta['source_height'] = height
-    if _fetch_platform_subtitles(url, options, info, folder):
+    if not range_applied and _fetch_platform_subtitles(url, options, info, folder):
         meta['subtitle_source'] = 'platform'
+    meta['download_quality'] = quality
+    if getattr(import_options, 'max_clips', None):
+        meta['max_clips'] = getattr(import_options, 'max_clips')
+    if range_applied:
+        meta['time_range'] = f'{sw_start}-{sw_end}'
+        meta['source_window'] = {'start': sw_start, 'end': sw_end}
+        if import_options and hasattr(import_options, 'source_window'):
+            import_options.source_window = None
     store.change(project_id, lambda data: data.update(source_meta=meta))
     from backend.core.database import SessionLocal
     from backend.models.project import Project
@@ -892,6 +953,9 @@ def _content_drafts(project_id, plan, video, platforms=()):
                 language=prefs.language, aspect=prefs.aspect, layout='crop' if prefs.aspect == 'portrait' else 'fit',
                 subtitles=True,
             ).model_dump(), SCORE_KEY: _score(clip)})
+        user_max = (plan.get('overrides') or {}).get('max_clips') or getattr(prefs, 'max_clips', None)
+        if user_max and int(user_max) > 0:
+            drafts = sorted(drafts, key=lambda d: d.get(SCORE_KEY, 0), reverse=True)[:int(user_max)]
         if not drafts:
             raise UserFacingError('没有提取到可渲染的内容片段，请检查字幕或重新导入')
         return drafts
@@ -1468,7 +1532,14 @@ def _initial_derive(project_id, plan, video, generation, platforms, branding, sk
     packaging_cache = {}
     # Platform eligibility must precede the score limit: otherwise ten short clips
     # can exclude the only valid YouTube long clip and leave nothing to render.
-    limit = _render_limit(generation.get('features'))
+    user_max_clips = (
+        (plan.get('overrides') or {}).get('max_clips')
+        or (generation.get('overrides') or {}).get('max_clips')
+    )
+    if user_max_clips and int(user_max_clips) > 0:
+        limit = int(user_max_clips)
+    else:
+        limit = _render_limit(generation.get('features'))
     scores = {draft['id']: draft[SCORE_KEY] for draft in base_drafts if SCORE_KEY in draft}
     automatic = {
         strategy_id: _automatic_drafts([base for base in base_drafts
@@ -1660,7 +1731,7 @@ def _dispatch_pending_variants(project_id):
         try:
             job = export(
                 project_id, Draft.model_validate(raw),
-                brand_outro=bool(variant['branding'].get('outro_enabled', True)),
+                brand_outro=bool(variant['branding'].get('outro_enabled', False) and load_settings().enabled),
                 _variant_identity=expected, **template_export_kwargs(variant),
             )
         except Exception as error:

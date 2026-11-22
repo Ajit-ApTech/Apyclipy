@@ -11,14 +11,12 @@ import OutputCaptionsSetting from '../features/settings/OutputCaptionsSetting'
 import FeedbackDialog from '../components/FeedbackDialog'
 import PublishSettings from '../components/PublishSettings'
 import { isDesktopMode } from '../utils/desktopMode'
-import { openExternalLink } from '../utils/externalLinks'
 import { isAnalyticsEnabled, setAnalyticsEnabled } from '../analytics/posthog'
 import { getRuntimeInfo } from '../analytics/lifecycle'
 import { isCrashReportsEnabled, setCrashReportsEnabled } from '../desktop/sentry'
 import { isKeepAwakeEnabled, getKeepAwakeController } from '../features/studio/keepAwake'
 import { getAppVersion } from '../desktop/updater'
 import { useAppUpdate } from '../desktop/UpdatePrompt'
-import { FEEDBACK_DISCUSSIONS_URL, FEEDBACK_ISSUES_URL } from '../analytics/feedback'
 import { useTheme } from '../context/ThemeContext'
 import { Btn, Icon, Row, Section, Segmented } from '../ui'
 import FlagOverrides, { flagOverridesVisible } from '../features/settings/FlagOverrides'
@@ -97,18 +95,9 @@ const SettingsPage: React.FC = () => {
           {active === 'feedback' && (
             <Section title={t("反馈")} description={t("哪里不对、想要什么，直接说。运行环境会自动附上，不含视频内容与 API 密钥。发送后正文和可选联系方式会先到 PostHog，再公开到 GitHub；邮箱不会公开。")}>
               <div className="ac-rows">
-                <Row label={t("发送反馈")} hint={t("在应用内写一句话即可。会先经 PostHog 送达；故障进 GitHub Issue，想法进 Discussions。")}>
+                <Row label={t("发送反馈")} hint={t("在应用内写一句话即可反馈您的宝贵建议与故障。")}>
                   <Btn variant="cta" size="sm" style={{ height: 32, fontSize: 13, padding: '0 16px' }} onClick={() => setFeedbackOpen(true)}>
                     <Icon.Chat size={13} />{t("写反馈")}</Btn>
-                </Row>
-                <Row label={t("出了问题")} hint={t("版本、平台和模型写在 Issue 里，方便复现。")}>
-                  <Btn size="sm" onClick={() => openExternalLink(FEEDBACK_ISSUES_URL)}>{t("报告问题")}<Icon.External size={12} /></Btn>
-                </Row>
-                <Row label={t("想法与用法")} hint={t("希望支持的能力和你的用法发到 Discussions，不要为此开 Issue。")}>
-                  <Btn size="sm" onClick={() => openExternalLink(FEEDBACK_DISCUSSIONS_URL)}>{t("去讨论")}<Icon.External size={12} /></Btn>
-                </Row>
-                <Row label={t("当前状态与已知问题")} hint={t("发版节奏、已知 bug 与解决办法都在这条置顶 Issue 里。")}>
-                  <Btn variant="text" size="sm" onClick={() => openExternalLink('https://github.com/zhouxiaoka/autoclip/issues/96')}>#96 <Icon.External size={12} /></Btn>
                 </Row>
               </div>
             </Section>

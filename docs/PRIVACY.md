@@ -1,206 +1,193 @@
-# AutoClip 隐私政策
+# AutoClip Privacy Policy
 
-*[English version →](./PRIVACY.en.md)*
 
-**生效日期：2026 年 6 月 3 日**
-**最近更新：2026 年 10 月 9 日**
 
-> ⚠️ 本文为模板草案，发布前请经法律顾问审阅（详见文末「需法律审阅的条款」）。
+**Effective Date: June 3, 2026**
+**Last Updated: October 9, 2026**
 
-AutoClip（以下简称"本软件""我们"）是一款**本地优先**的桌面视频切片工具。我们高度重视你的隐私。本政策说明我们如何收集、使用、存储和保护你的信息，以及你享有的权利。
+> ⚠️ This is a draft template. Please have legal counsel review it before publishing (see "Clauses Requiring Legal Review" at the end).
 
-本政策依据中华人民共和国《个人信息保护法》《网络安全法》《数据安全法》等法律法规制定。
+AutoClip ("the Software", "we", "us") is a **local-first** desktop video clipping tool. We take your privacy seriously. This policy explains what information we collect, how we use, store, and protect it, and the rights you have.
 
----
-
-## 一、核心原则：本地优先
-
-- **剪辑与渲染在你本机完成。** 视频、音频和项目文件保存在本机，不会上传到我们的服务器。
-- 你选用云端模型时，数据直接发给该服务商，不经过我们的服务器。字幕路线发送相关字幕或文案。你显式启用云端视觉模型时，还会发送抽样画面及必要文字。费用取决于所选服务商。
-- **你配置的第三方 API 密钥**（Qwen、OpenAI、Gemini、DeepSeek、Doubao Seed、Kimi、GLM、Grok）**仅保存在你本机**，不会上传，也不会出现在任何统计数据中。Ollama / LM Studio 走本机服务。
-- 我们**不收集**你的姓名、手机号、身份证件。邮箱只有在你把反馈发出去、并且自己填了联系方式时才会收到，而且不会写进公开的 GitHub 帖子。
+This policy is drafted with reference to China's Personal Information Protection Law (PIPL), Cybersecurity Law, and Data Security Law. For users in other regions, see "International Transfers" and the compliance notes below.
 
 ---
 
-## 二、我们收集的信息
+## 1. Core Principle: Local-First
 
-### 2.1 匿名使用统计（当前已启用）
-
-为了了解功能使用情况、发现并修复问题、改进产品，本软件通过 **PostHog** 收集**匿名**的使用数据。这些数据**不包含**你的视频内容、字幕/转写文本、文件名内容或 API 密钥。
-
-| 类别 | 具体内容 | 用途 |
-|------|---------|------|
-| 设备与环境 | 操作系统类型、CPU 架构、应用版本、系统语言 | 适配与问题排查 |
-| 使用行为 | 应用启动、页面访问、导入素材、导出切片、保存配置等操作事件 | 衡量功能使用与转化 |
-| 运行结果 | 处理成功/失败、失败所处环节与错误码 | 提升稳定性 |
-| 匿名标识 | 随机生成的设备标识符（存于本机，不关联真实身份） | 区分独立设备、计算留存 |
-
-| 流程关联 | 独立随机生成的流程、操作、尝试与成片标记；示例/用户素材分类；配置引导、连接测试、设置分类和取景结果的枚举及数量 | 区分示例体验与真实使用，关联阶段和结果；不发送内部项目/作业 ID、模型名、地址或内容 |
-
-流程关联映射仅在本机保存，最近活动 35 日内最多保留 500 个项目、每项目最多 100 个成片标记；关闭使用统计时清除。Studio 项目文件还保留最多 100 次精简执行终态，用于恢复状态观察，不包含视频或提示词正文；它属于本地项目数据，关闭统计不会删除项目文件。
-
-- **匿名性**：我们使用随机生成的设备标识符，不创建可识别你身份的用户画像。
-- **数据接收方**：PostHog Inc.，数据存储于其**美国**区域服务器（见第六条「数据跨境」）。
-- **本地缓冲**：事件在本机批量缓冲后发送，网络异常不影响软件正常使用。
-- **功能开关**：只有在「匿名使用统计」开启时，才会向 PostHog 请求功能开关的布尔或枚举值，用来决定是否展示尚未全量的界面。关闭统计后不会发出这类请求，所有新功能使用构建时的关闭默认值。开关值不含视频、字幕或密钥。本机「实验功能」覆盖只保存在这台电脑上，而且只在开发构建的设置里出现，正式版不显示。
-
-### 2.2 崩溃报告（可选，默认开启）
-
-为了修复闪退和未处理异常，本软件可通过 **Sentry** 发送崩溃栈。仅在构建时配置了上报地址、且你未关闭「崩溃报告」时发送。
-
-| 类别 | 具体内容 | 用途 |
-|------|---------|------|
-| 错误栈 | 异常类型、堆栈、应用版本、操作系统 | 定位崩溃 |
-| 运行环境 | 前端 / Python 后端、桌面或 Web 模式 | 区分出问题的进程 |
-
-崩溃报告**不包含**视频内容、字幕/转写文本、文件名内容或 API 密钥。`send_default_pii` 关闭，客户端不主动设置用户标识或发送 IP 字段；接收方仍可从网络连接获取来源信息，并可能据此推断大致地区。
-
-- **数据接收方**：Functional Software, Inc.（Sentry），服务器区域取决于我们创建的项目（当前计划为美国）。
-- **可关闭**：设置 → 应用 →「崩溃报告」。关闭后写入本机 `privacy.json`，前后端在发送新错误事件前检查开关；已经发出的网络请求无法撤回。
-- **未配置上报地址时**：不会建立任何到 Sentry 的连接。
-
-### 2.3 你主动提供的信息
-
-- **应用内反馈**：你在反馈框里写下的文字、所选类型、可选联系方式，以及当时的版本、系统、架构、模型名称、失败阶段和错误摘要，会在你点「发送」后**先送到 PostHog**，再由我们写进公开 GitHub：故障进入 Issue，想法和其他进入 Discussions。可选邮箱只进入维护者的收件记录，不写进公开帖。这是你主动提交，不是静默采集；发送不依赖「匿名使用统计」开关。视频内容、字幕和 API 密钥不在其中；若错误摘要里出现密钥样式的文本，发送前会打码。
-- **第三方平台账号/Cookie**：若你使用 B 站、YouTube 等平台的下载或上传功能，相关登录凭据（Cookie 等）**仅保存在你本机**，用于完成你发起的操作，我们不收集、不上传。
-
-### 2.4 我们不收集的信息
-
-- 你的视频/音频原始内容（我们的服务器不接收；你启用的云端视觉模型会收到抽样画面）
-- 字幕、转写文本内容（我们的服务器不接收；字幕路线会把相关字幕或文案发给你选的服务商）
-- 第三方 API 密钥明文
-- 姓名、手机号、地理位置、身份证件等个人身份信息。邮箱仅在你于反馈中主动填写时收集，且不公开到 GitHub
-
-上述「不收集」指 AutoClip 与我们的服务器。你自行配置的云端服务商会收到该路线所需的字幕、文案，或抽样画面及必要文字。
+- **Cutting and rendering stay on your device.** Video, audio, and project files stay on your machine and are not uploaded to our servers.
+- When you choose a cloud model, that data goes directly to the provider, not through our servers. The subtitle route sends the relevant subtitles or copy. If you explicitly enable a cloud visual model, sampled frames and the necessary text are sent as well. Fees depend on that provider.
+- **Third-party API keys you configure** (Qwen, OpenAI, Gemini, DeepSeek, Doubao Seed, Kimi, GLM, Grok) **are stored only on your device**, never uploaded, and never appear in any analytics data. Ollama / LM Studio run as local services.
+- We **do not collect** your name, phone number, or ID documents. An email address is received only if you type one into feedback, and it is not published on the public GitHub post.
 
 ---
 
-## 三、我们如何使用信息
+## 2. Information We Collect
 
-我们仅将上述匿名数据用于：
+### 2.1 Anonymous Usage Analytics (currently enabled)
 
-1. 统计功能使用与产品漏斗（如导入→出片转化率）；
-2. 发现并修复缺陷、提升稳定性与性能；
-3. 评估改版效果、规划产品方向。
+To understand how features are used, find and fix problems, and improve the product, the Software collects **anonymous** usage data via **PostHog**. This data **does not include** your video content, subtitle/transcript text, file contents, or API keys.
 
-我们**不会**将这些数据用于广告投放，也**不会**出售你的任何信息。
+| Category | Details | Purpose |
+|----------|---------|---------|
+| Device & environment | OS type, CPU architecture, app version, system language | Compatibility & troubleshooting |
+| Usage behavior | Events such as app launch, page views, video import, clip export, saving settings | Measure feature usage & conversion |
+| Outcomes | Success/failure of processing, the failing stage and error code | Improve stability |
+| Anonymous identifier | A randomly generated device ID (stored locally, not linked to your real identity) | Distinguish devices, compute retention |
 
----
+| Workflow correlation | Independently generated random flow, operation, attempt and artifact tokens; sample/user material category; enumerated setup, connection-test, settings-section and framing results and counts | Relate stages and outcomes and distinguish sample use; internal project/job IDs, model names, addresses and content are not sent |
 
-## 四、你的选择与权利
+Local correlation mappings retain up to 500 projects active within 35 days and 100 artifact tokens per project; disabling analytics clears them. Studio project files also retain up to 100 compact execution receipts for state recovery, without video or prompt content. These are local project data and are not deleted by disabling analytics.
 
-### 4.1 关闭使用统计与崩溃报告
+- **Anonymity**: We use a randomly generated device identifier and do not build identifiable user profiles.
+- **Recipient**: PostHog Inc., with data stored on its **United States** servers (see Section 6, "International Transfers").
+- **Local buffering**: Events are batched locally before sending; network issues do not affect normal use of the Software.
+- **Feature flags**: The Software requests boolean or enum feature-flag values from PostHog only while Anonymous Usage Analytics is on, to decide whether an interface that is not fully rolled out is shown. Turning analytics off sends no flag request, and every new feature stays at its build-time off default. Flag values do not include video, subtitles, or keys. Experiment overrides stay on this computer and appear only in a development build's settings. Release builds do not show that section.
 
-你可随时在 **设置 → 应用** 中分别关闭「匿名使用统计」和「崩溃报告」。关闭后立即停止对应上报，该设置在重启后依然有效。关闭匿名统计后也不会再请求功能开关。关闭匿名统计不会阻止你在反馈框里主动发送；那一次发送是单独的动作。
+### 2.2 Crash reports (optional, on by default)
 
-### 4.2 你的法定权利
+To fix crashes, the Software may send stack traces via **Sentry** when a DSN is configured at build time and you have not turned off **Crash reports** in Settings → App. This does **not** include video content, transcripts, or API keys. `send_default_pii` is off. The client does not explicitly set a user identifier or IP field; the recipient can still obtain connection-source information and may infer an approximate region from it.
 
-根据《个人信息保护法》，在适用范围内你有权：
+### 2.3 Information You Provide
 
-- 知情、查阅、复制；
-- 更正、补充；
-- 删除；
-- 撤回同意（即关闭统计开关）；
-- 注销（账号功能上线后适用）。
+- **In-app feedback**: When you press Send, the note, its category, optional contact, and the app version, operating system, architecture, model name, failure stage, and a short error summary go to **PostHog first**, then we publish the note on GitHub: problems become Issues, and ideas or other notes become Discussions. An optional email stays in the maintainer inbox and is not placed on the public post. This is something you submit on purpose, not silent collection; sending does not depend on the anonymous analytics switch. Video content, subtitles, and API keys are not included; key-like text in an error summary is redacted before sending.
+- **Third-party platform accounts/cookies**: If you use download or upload features for platforms such as Bilibili or YouTube, the related credentials (cookies, etc.) are **stored only on your device** to perform the actions you initiate. We do not collect or upload them.
 
-如需行使上述权利或提出投诉，请通过文末联系方式与我们联系。
+### 2.4 Information We Do Not Collect
 
----
+- Your original video/audio content (our servers do not receive it; a cloud visual model you enable receives sampled frames)
+- Subtitle or transcript text (our servers do not receive it; the subtitle route sends the relevant subtitles or copy to the provider you chose)
+- Plaintext third-party API keys
+- Name, phone number, geolocation, ID documents, or other personally identifying information. An email is collected only if you type it into feedback, and it is not published on GitHub
 
-## 五、数据存储与保留
-
-- **本地数据**（项目、视频、字幕、配置、密钥）：存储于你本机，由你完全掌控；删除项目即清除该项目的数据。卸载软件默认保留这些数据，便于重装后继续使用：
-  - Windows：卸载时勾选「同时删除 AutoClip 数据（项目、设置、API 密钥）」会一并删除 `%APPDATA%\AutoClip` 和应用的 WebView 数据（`%APPDATA%\com.autoclip.desktop`、`%LOCALAPPDATA%\com.autoclip.desktop`）；默认不勾选。静默卸载只有显式传入 `/DELETEAPPDATA` 才删除，删除范围与勾选时相同；升级安装从不删除。
-  - macOS / Linux：请手动删除数据目录 `~/Library/Application Support/AutoClip` 或 `~/.local/share/AutoClip`。
-- **匿名统计数据**：存储于 PostHog，保留期限遵循我们设定的数据保留策略（默认不超过 **12 个月**），到期自动清理或匿名化。
-- **崩溃报告**：存储于 Sentry，默认保留不超过 **90 天**。
-
----
-
-## 六、数据跨境
-
-匿名使用统计由 PostHog、崩溃报告由 Sentry 存储于**美国**区域服务器，可能涉及个人信息向中华人民共和国境外提供。我们已尽力将传输数据限定为不可识别身份的技术数据。**〔法律审阅项：跨境提供的合规路径（单独同意 / 标准合同 / 安全评估）需依《个人信息保护法》第三章确认〕**
+“We do not collect” means AutoClip and our servers. The cloud provider you configure receives the subtitles or copy that route needs, or sampled frames and the necessary text.
 
 ---
 
-## 七、第三方服务
+## 3. How We Use Information
 
-| 服务 | 提供方 | 用途 | 隐私政策 |
-|------|--------|------|---------|
-| 产品分析 | PostHog Inc. | 匿名使用统计 | https://posthog.com/privacy |
-| 崩溃上报 | Functional Software, Inc.（Sentry） | 崩溃栈（可关） | https://sentry.io/privacy/ |
-| 第三方 AI 模型（你自行配置） | Qwen、OpenAI、Gemini、DeepSeek、Doubao Seed、Kimi、GLM、Grok；本地为 Ollama / LM Studio | 云端字幕路线发送字幕或文案；云端视觉路线发送抽样画面及必要文字。本地预设留在本机。密钥保存在本机，由你直接调用 | 见各服务方政策 |
-| 视频平台（你自行使用） | B 站 / YouTube 等 | 你发起的下载/上传 | 见各平台政策 |
+We use the anonymous data above solely to:
 
-你在本软件中直接调用第三方 AI 服务时，相关数据流向及隐私规则适用该服务方的隐私政策。我们不转发、不留存这些字幕、文案或抽样画面。我们自己的云端模型代理仍未启用，见第十条。
+1. Measure feature usage and product funnels (e.g., import-to-export conversion);
+2. Detect and fix defects, and improve stability and performance;
+3. Evaluate the impact of changes and plan product direction.
 
----
-
-## 八、儿童隐私
-
-本软件面向成年专业用户，**不面向 14 周岁以下儿童**，我们不会主动收集儿童个人信息。
+We **do not** use this data for advertising, and we **do not** sell any of your information.
 
 ---
 
-## 九、安全措施
+## 4. Your Choices and Rights
 
-我们采取合理的技术与管理措施保护数据安全，包括：传输加密（HTTPS）、最小化收集、匿名化处理、密钥不离开本机等。但请理解，互联网传输无法保证绝对安全。
+### 4.1 Turn Off Usage Analytics
 
----
+You can disable "Anonymous Usage Analytics" at any time under **Settings → App**. Once disabled, the Software **immediately stops sending usage analytics** and also stops requesting feature flags. This setting persists across restarts. Turning analytics off does not block an explicit feedback submission.
 
-## 十、规划中的功能（当前尚未启用）
+### 4.2 Your Legal Rights
 
-以下功能在我们的产品规划中，**目前均未上线、未收集任何相关数据**。正式启用前，我们将更新本政策、明确告知，并在涉及个人信息时**单独征得你的同意**：
+Where applicable (e.g., under PIPL), you have the right to:
 
-- **账号体系**：未来可选注册/登录以同步配置、使用额度等。届时将收集必要的账号信息。
-- **云端 LLM 代理**：未来若你选择使用我们托管的模型代理，则**字幕/转写文本会经由我们的代理服务器转发**以完成 AI 处理。该功能为可选，未启用前文本不离开本机。
-- **付费与计量**：未来可能引入充值、订阅等，将通过合规支付渠道处理交易信息。
+- Be informed, access, and obtain a copy;
+- Correct and supplement;
+- Delete;
+- Withdraw consent (i.e., turn off the analytics switch);
+- Deregister (applicable once account features launch).
 
----
-
-## 十一、政策更新
-
-当数据处理方式发生变化时，我们会更新本政策并修改「最近更新」日期；重大变更将通过应用内提示等方式告知你。
+To exercise these rights or file a complaint, contact us using the details below.
 
 ---
 
-## 十二、联系我们
+## 5. Data Storage and Retention
 
-如对本隐私政策或个人信息处理有任何疑问、意见或投诉，请联系：
+- **Local data** (projects, videos, subtitles, settings, keys): stored on your device and fully under your control; deleting a project removes its data. Uninstalling keeps this data by default so a reinstall can pick it up:
+  - Windows: tick "Also delete my AutoClip data (projects, settings, API keys)" in the uninstaller to also delete `%APPDATA%\AutoClip` and the app's WebView data (`%APPDATA%\com.autoclip.desktop`, `%LOCALAPPDATA%\com.autoclip.desktop`); it is unticked by default. A silent uninstall deletes the same directories only when `/DELETEAPPDATA` is passed explicitly; upgrades never delete them.
+  - macOS / Linux: delete the data directory `~/Library/Application Support/AutoClip` or `~/.local/share/AutoClip` manually.
+- **Anonymous analytics data**: stored by PostHog, retained according to our retention policy (by default no longer than **12 months**), after which it is automatically deleted or anonymized.
 
-- 邮箱：**christine95zhouye@gmail.com**
-- 官网：**https://zhouxiaoka.github.io/autoclip_intro/**
+---
+
+## 6. International Transfers
+
+Anonymous usage analytics are stored by PostHog on **United States** servers, which may involve transferring data outside of mainland China. We limit transferred data to anonymous, non-identifying information. **[Legal review item: the lawful basis for cross-border transfer (separate consent / standard contract / security assessment) must be confirmed under PIPL Chapter III. For EU/UK users, an appropriate GDPR transfer mechanism must be assessed.]**
+
+---
+
+## 7. Third-Party Services
+
+| Service | Provider | Purpose | Privacy Policy |
+|---------|----------|---------|----------------|
+| Product analytics | PostHog Inc. | Anonymous usage analytics | https://posthog.com/privacy |
+| Third-party AI models (you configure) | Qwen, OpenAI, Gemini, DeepSeek, Doubao Seed, Kimi, GLM, Grok; Ollama / LM Studio locally | The cloud subtitle route sends subtitles or copy. The cloud visual route sends sampled frames and the necessary text. Local presets stay on the device. Keys stay on your device; you call the provider directly | See each provider's policy |
+| Video platforms (you use) | Bilibili / YouTube, etc. | Downloads/uploads you initiate | See each platform's policy |
+
+When you call third-party AI services directly within the Software, the resulting data flows and privacy rules are governed by that provider's privacy policy. We do not relay or retain those subtitles, that copy, or those sampled frames. Our own cloud model proxy is still not enabled; see Section 10.
+
+---
+
+## 8. Children's Privacy
+
+The Software is intended for adult professional users and is **not directed to children under 14**. We do not knowingly collect children's personal information.
+
+---
+
+## 9. Security Measures
+
+We apply reasonable technical and organizational measures to protect data, including transport encryption (HTTPS), data minimization, anonymization, and keeping keys on-device. However, please understand that no method of internet transmission is completely secure.
+
+---
+
+## 10. Planned Features (not yet enabled)
+
+The following are on our product roadmap and **are not currently active and collect no related data**. Before they go live, we will update this policy, notify you clearly, and **obtain your separate consent** where personal information is involved:
+
+- **Accounts**: optional sign-up/login in the future to sync settings, usage quotas, etc. This would collect necessary account information.
+- **Cloud LLM proxy**: in the future, if you opt to use our hosted model proxy, **your subtitle/transcript text would be forwarded through our proxy servers** to perform AI processing. This is optional; until enabled, text never leaves your device.
+- **Payments & metering**: we may introduce top-ups, subscriptions, etc., processing transaction information through compliant payment channels.
+
+---
+
+## 11. Policy Updates
+
+When our data practices change, we will update this policy and revise the "Last Updated" date. Material changes will be communicated through means such as in-app notices.
+
+---
+
+## 12. Contact Us
+
+For any questions, comments, or complaints about this Privacy Policy or our handling of personal information, contact:
+
+- Email: **christine95zhouye@gmail.com**
+- Website: **https://zhouxiaoka.github.io/autoclip_intro/**
 
 ---
 
 ---
 
-## 合规检查表（Compliance Checklist）
+## Compliance Checklist
 
-| 法规 | 状态 | 说明 |
-|------|------|------|
-| 《个人信息保护法》(PIPL) | ⚠️ 部分 | 当前为匿名数据，跨境与单独同意路径待法务确认 |
-| 《数据安全法》/《网络安全法》 | ✅ 基本符合 | 本地优先、最小化收集 |
-| GDPR（如面向欧盟用户）| ⚠️ 待评估 | 目前 PostHog 用 US 区；若拓展欧盟需评估法律依据与 EU 区 |
-| CCPA（如面向加州用户）| ⚠️ 待评估 | 海外发行前评估 |
-| COPPA / 儿童保护 | ✅ 不适用 | 不面向儿童 |
+| Regulation | Status | Notes |
+|-----------|--------|-------|
+| PIPL (China) | ⚠️ Partial | Currently anonymous data; cross-border & separate-consent path pending legal review |
+| Data Security Law / Cybersecurity Law | ✅ Largely compliant | Local-first, data minimization |
+| GDPR (if serving EU users) | ⚠️ To assess | Currently PostHog US region; EU expansion needs lawful basis & EU region |
+| CCPA (if serving California users) | ⚠️ To assess | Assess before overseas release |
+| COPPA / children | ✅ N/A | Not directed to children |
 
-## 需法律审阅的条款（Clauses Requiring Legal Review）
+## Clauses Requiring Legal Review
 
-| 条款 | 原因 | 优先级 |
-|------|------|--------|
-| 第六条 数据跨境（PostHog US） | PIPL 跨境提供需明确合规路径（单独同意/标准合同/安全评估） | 高 |
-| 「匿名」定性 | 设备标识符 + 行为数据是否构成可识别个人信息，影响是否需单独同意 | 高 |
-| 第五条 数据保留期限 | 需填写并核实具体保留时长 | 中 |
-| 第十条 规划功能（云代理处理用户文本） | 上线前需重写为正式条款并单独同意 | 中（启用前） |
-| 海外发行（GDPR/CCPA） | 拓展海外市场前补充对应章节 | 低（按 Roadmap Phase 3） |
+| Clause | Why | Priority |
+|--------|-----|----------|
+| Section 6 — Cross-border transfer (PostHog US) | PIPL requires a clear lawful basis (separate consent / standard contract / security assessment) | High |
+| "Anonymous" characterization | Whether device ID + behavioral data constitutes identifiable personal information affects whether separate consent is required | High |
+| Section 5 — Retention period | Confirm the specific retention duration | Medium |
+| Section 10 — Planned features (cloud proxy handling user text) | Must be rewritten as formal terms with separate consent before launch | Medium (before enabling) |
+| Overseas release (GDPR/CCPA) | Add corresponding sections before expanding to overseas markets | Low (per Roadmap Phase 3) |
 
-## 落地清单（Implementation Checklist）
+## Implementation Checklist
 
-- [x] 填写联系邮箱、官网/仓库地址、数据保留期限
-- [ ] 法务审阅跨境与「单独同意」路径
-- [ ] 应用内首次启动展示隐私政策入口 / 同意提示
-- [ ] 官网发布同一份政策并保持版本一致
-- [ ] 设置页「隐私与数据」开关旁加本政策链接
-- [ ] PostHog 后台设置数据保留策略，与第五条一致
-- [ ] 账号 / 云代理 / 付费上线前，更新本政策并触发重新同意
+- [x] Fill in contact email, website, and retention period
+- [ ] Legal review of cross-border transfer and "separate consent" path
+- [ ] Show privacy policy entry / consent prompt on first launch
+- [ ] Publish the same policy on the website and keep versions consistent
+- [ ] Add a link to this policy next to the "Privacy & Data" toggle in Settings
+- [ ] Configure PostHog data retention policy to match Section 5
+- [ ] Update this policy and re-trigger consent before launching accounts / cloud proxy / payments

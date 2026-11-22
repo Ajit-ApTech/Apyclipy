@@ -185,9 +185,9 @@ export interface ReadinessLineItem {
 }
 
 const LINE_TITLES: Record<ReadinessLineKey, string> = {
-  analysis: '模型',
-  transcription: '转写',
-  visual: '画面',
+  analysis: 'Model',
+  transcription: 'Transcription',
+  visual: 'Visual',
   ffmpeg: 'FFmpeg',
 }
 
@@ -213,10 +213,10 @@ export function readinessLineItems(report: ImportReadiness | null | undefined): 
       return { key, title, mark: 'dash' as const, detail: '…', repair: LINE_DEFAULT_REPAIR[key], needsFix: false }
     }
     if (key === 'visual' && (check.code === 'not_required' || check.code === 'optional')) {
-      return { key, title, mark: 'dash', detail: detail || '未启用', repair, needsFix: false }
+      return { key, title, mark: 'dash', detail: detail && detail !== '未启用' ? detail : 'Not enabled', repair, needsFix: false }
     }
     if (check.ok) {
-      const badge = key === 'analysis' && check.trial_ok === false ? '⚠ 未通过试跑' : undefined
+      const badge = key === 'analysis' && check.trial_ok === false ? '⚠ Trial not run' : undefined
       return {
         key, title,
         mark: 'ok',
@@ -230,7 +230,7 @@ export function readinessLineItems(report: ImportReadiness | null | undefined): 
       key, title,
       mark: 'fail',
       detail,
-      badge: key === 'analysis' && check.trial_ok === false ? '⚠ 未通过试跑' : undefined,
+      badge: key === 'analysis' && check.trial_ok === false ? '⚠ Trial not run' : undefined,
       repair,
       needsFix: checkRepair !== 'none',
     }
@@ -239,10 +239,10 @@ export function readinessLineItems(report: ImportReadiness | null | undefined): 
 
 function defaultDetail(key: ReadinessLineKey, check: ReadinessCheck | null | undefined): string {
   if (key === 'ffmpeg') return 'FFmpeg'
-  if (key === 'visual') return '未启用'
+  if (key === 'visual') return 'Not enabled'
   if (key === 'transcription') {
-    if (check?.model) return `本地 ${check.model}`
-    return '转写'
+    if (check?.model) return `Local ${check.model}`
+    return 'Transcription'
   }
   return check?.model || '—'
 }

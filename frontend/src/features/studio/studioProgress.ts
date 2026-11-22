@@ -12,12 +12,12 @@ const STAGES: readonly [string, number][] = [
 ]
 
 const STAGE_LABEL: Record<string, string> = {
-  INGEST: '素材准备',
-  SUBTITLE: '字幕处理',
-  ANALYZE: '内容分析',
-  HIGHLIGHT: '片段定位',
-  EXPORT: '视频导出',
-  DONE: '处理完成',
+  INGEST: 'Preparing media',
+  SUBTITLE: 'Processing subtitles',
+  ANALYZE: 'Analyzing content',
+  HIGHLIGHT: 'Locating segments',
+  EXPORT: 'Exporting video',
+  DONE: 'Processing complete',
 }
 
 const EASE_TAU_SEC = 90
@@ -183,15 +183,15 @@ export function studioRunProgress(input: StudioProgressInput, nowMs: number): St
       approximate: !measured,
       elapsedMinutes,
       modelBudget: false,
-      detail: analysis.progress_message || analysis.message || '正在生成可发布成片',
+      detail: analysis.progress_message || analysis.message || 'Generating ready-to-publish clips',
     }, input, nowMs, 'EXPORT', phase)
   }
 
   if (phase === 'screening') {
     // Postprocess does not advance yt-dlp's download percent. Do not keep painting that cap.
-    if (analysis.message === '正在合并音视频') {
+    if (analysis.message === '正在合并音视频' || analysis.message === 'Merging audio and video') {
       return withEta({
-        label: '正在合并音视频',
+        label: 'Merging audio and video',
         percent: 0,
         approximate: false,
         indeterminate: true,
@@ -204,7 +204,7 @@ export function studioRunProgress(input: StudioProgressInput, nowMs: number): St
     const clock = easeClock(analysis.progress_since, nowMs)
     const percent = clampRunning(measured ? analysis.percent! : easePercent('INGEST', 0, clock))
     return withEta({
-      label: measured ? '下载中' : STAGE_LABEL.INGEST,
+      label: measured ? 'Downloading' : STAGE_LABEL.INGEST,
       percent,
       approximate: !measured,
       elapsedMinutes,
@@ -213,7 +213,7 @@ export function studioRunProgress(input: StudioProgressInput, nowMs: number): St
     }, input, nowMs, 'INGEST', phase)
   }
 
-  const transcribing = analysis.message === '正在生成字幕'
+  const transcribing = analysis.message === '正在生成字幕' || analysis.message === 'Generating subtitles'
   const stage = analysis.progress_stage || (transcribing ? 'SUBTITLE' : 'ANALYZE')
   const band = stageBand(stage)
   let reported: number | null = typeof analysis.progress_percent === 'number' ? analysis.progress_percent : null

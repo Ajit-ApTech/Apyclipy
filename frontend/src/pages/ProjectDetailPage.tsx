@@ -361,6 +361,27 @@ const ProjectDetailPage: React.FC = () => {
           {isCompleted && clips.length > 0 && (
             <Btn onClick={() => navigate(`/project/${currentProject.id}/publish`)}>{t("发布")}</Btn>
           )}
+          {(currentProject.status === 'processing' || currentProject.status === 'pending') && (
+            <Btn
+              variant="text"
+              style={{ color: '#ef4444' }}
+              onClick={async () => {
+                try {
+                  setStatusLoading(true)
+                  await projectApi.cancelProject(currentProject.id)
+                  message.success(t("任务已取消"))
+                  await loadProject()
+                } catch (err) {
+                  message.error(t("取消失败"))
+                } finally {
+                  setStatusLoading(false)
+                }
+              }}
+              loading={statusLoading}
+            >
+              {t("取消")}
+            </Btn>
+          )}
           {!isVisual && currentProject.status === 'pending' && (
             <Btn variant="cta" onClick={() => { trackLegacyEntry({ legacy_action: 'start_processing' }, flagAssigned('hide_legacy_entrypoints')); void handleStartProcessing() }} loading={statusLoading}>{t("开始处理")}</Btn>
           )}

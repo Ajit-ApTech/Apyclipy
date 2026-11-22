@@ -34,29 +34,28 @@ import './studio.css'
 import './quick-output.css'
 
 function issueCopy(item: ReadinessIssue) {
-  if (item.key === 'analysis' && item.code === 'validation_failed') return t('模型连接未通过校验。请到「设置 → 服务商与模型」按提示改密钥或地址后再生成。')
-  if (item.key === 'analysis') return t('分析模型还没配好。连接一家 AI 服务后再生成。')
-  if (item.code === 'whisper_installing') return t('正在安装本地转写…')
-  if (item.code === 'whisper_not_installed') return t('本地转写还没安装。已有字幕可以直接继续。')
-  if (item.code === 'whisper_model_missing') return t('转写模型还没下载。已有字幕可以直接继续。')
-  if (item.code === 'whisper_model_downloading') return t('正在下载转写模型…')
-  if (item.code === 'whisper_model_failed') return t('转写模型下载失败，请重试。已有字幕可以直接继续。')
-  if (item.code === 'sensevoice_not_ready') return t('SenseVoice 还没准备好。已有字幕可以直接继续。')
-  if (item.code === 'cloud_not_configured') return t('云端转写还没配好。已有字幕可以直接继续。')
-  if (item.key === 'visual' && item.code === 'vision_unsupported') return t('画面理解使用的模型不能看图。请到「设置 → 服务商与模型」换一个能看图的模型后再生成。')
-  if (item.key === 'visual') return t('画面分析需要可用的视觉模型。')
-  if (item.key === 'ffmpeg') return t('找不到 FFmpeg，暂时无法处理视频。')
-  return t('导入条件还没准备好。')
+  if (item.key === 'analysis' && item.code === 'validation_failed') return 'Model connection failed validation. Please check API key or endpoint in Settings.'
+  if (item.key === 'analysis') return 'AI analysis model is not configured. Connect an AI provider in Settings.'
+  if (item.code === 'whisper_installing') return 'Installing local Whisper transcription…'
+  if (item.code === 'whisper_not_installed') return 'Local Whisper is not installed. Videos with subtitles can proceed.'
+  if (item.code === 'whisper_model_missing') return 'Transcription model not downloaded yet. Existing subtitles can proceed.'
+  if (item.code === 'whisper_model_downloading') return 'Downloading transcription model…'
+  if (item.code === 'whisper_model_failed') return 'Transcription model download failed. Please retry.'
+  if (item.code === 'sensevoice_not_ready') return 'SenseVoice transcription is not ready.'
+  if (item.code === 'cloud_not_configured') return 'Cloud transcription not configured.'
+  if (item.key === 'visual' && item.code === 'vision_unsupported') return 'Model does not support vision. Please select a vision-capable model in Settings.'
+  if (item.key === 'visual') return 'Visual analysis requires a vision-capable model.'
+  if (item.key === 'ffmpeg') return 'FFmpeg not found. Cannot process video.'
+  return 'Import prerequisites not ready.'
 }
 
 function repairLabel(item: ReadinessIssue) {
-  if (item.repair === 'settings_ai') return item.code === 'validation_failed' ? t('去设置修改') : t('连接 AI 服务')
-  if (item.repair === 'install_whisper') return item.model ? t('下载转写模型') : t('安装 Whisper')
-  if (item.repair === 'settings_transcription') return t('转写设置')
-  if (item.repair === 'settings_vision') return t('视觉设置')
+  if (item.repair === 'settings_ai') return item.code === 'validation_failed' ? 'Configure Key' : 'Connect AI'
+  if (item.repair === 'install_whisper') return item.model ? 'Download Model' : 'Install Whisper'
+  if (item.repair === 'settings_transcription') return 'Transcription Settings'
+  if (item.repair === 'settings_vision') return 'Vision Settings'
   return ''
 }
-
 
 function BrowserCookieControl({ browser, busy, onChange, assist, selectRef }: {
   browser: string
@@ -66,13 +65,13 @@ function BrowserCookieControl({ browser, busy, onChange, assist, selectRef }: {
   selectRef?: Ref<HTMLSelectElement>
 }) {
   return <>
-    <label className="studio-field" htmlFor={assist ? 'studio-browser-cookie' : undefined}>{t("使用浏览器登录状态")}
+    <label className="studio-field" htmlFor={assist ? 'studio-browser-cookie' : undefined}>Use Browser Login Session
       <select id={assist ? 'studio-browser-cookie' : undefined} ref={selectRef} value={browser} onChange={event => onChange(event.target.value)} disabled={busy}>
-        <option value="">{t("不使用")}</option>
+        <option value="">Do not use</option>
         {['chrome', 'edge', 'safari', 'firefox'].map(name => <option key={name} value={name}>{name}</option>)}
       </select>
     </label>
-    <p className="studio-muted">{assist ? t("还没有选择浏览器。选一个已登录的浏览器后再生成。这个浏览器如果正开着，请先完全退出，或换一个浏览器。") : t("仅在下载需要登录时选择，不会自动读取浏览器 Cookie。")}</p>
+    <p className="studio-muted">{assist ? 'No browser selected. Choose a logged-in browser before generating. If the browser is open, please exit it completely.' : 'Only needed if video download requires website login.'}</p>
   </>
 }
 
@@ -86,25 +85,40 @@ function longFormNotice(durationSec: number | null, platforms: string[]) {
   const others = platforms.some(platform => platform !== 'youtube_long')
   if (durationSec != null && durationSec < YOUTUBE_LONG_MIN_SEC) {
     return others
-      ? `${t('这段素材不足 3 分钟，做不了 YouTube 横屏。')} ${t('YouTube 横屏会跳过，其他平台照常生成。')}`
-      : t('这段素材不足 3 分钟，做不了 YouTube 横屏。')
+      ? 'Source media is under 3 minutes; YouTube landscape will be skipped, other platforms will generate.'
+      : 'Source media is under 3 minutes; cannot generate YouTube landscape.'
   }
   return others
-    ? t('YouTube 横屏至少需要一条 3 分钟或更长的片段。如果素材做不出这样一条，这个版本会被跳过，其他平台仍会生成。')
-    : t('YouTube 横屏至少需要一条 3 分钟或更长的片段。如果素材做不出这样一条，这个版本会被跳过。')
+    ? 'YouTube landscape requires at least one 3+ minute clip. If unavailable, it will be skipped.'
+    : 'YouTube landscape requires at least one 3+ minute clip.'
 }
 
 function blockMessage(reason: string, readiness?: ImportReadiness | null) {
-  if (reason === 'pending') return t('正在确认导入条件…')
+  if (reason === 'pending') return 'Checking import prerequisites…'
   if (reason === 'analysis') return readiness?.checks?.analysis?.code === 'validation_failed'
-    ? t('模型连接未通过校验。请到「设置 → 服务商与模型」按提示改密钥或地址后再生成。')
-    : t('请先连接 AI 服务，再导入视频。')
-  if (reason === 'transcription') return t('还没有可用的转写。可以附上 SRT 字幕，或先准备好转写。')
+    ? 'Model connection failed. Please check key or URL in Settings.'
+    : 'Please connect an AI service before importing videos.'
+  if (reason === 'transcription') return 'No transcription available. You can attach an SRT subtitle or setup Whisper.'
   if (reason === 'visual') return readiness?.checks?.visual?.code === 'vision_unsupported'
-    ? t('画面理解使用的模型不能看图。请到「设置 → 服务商与模型」换一个能看图的模型后再生成。')
-    : t('请先配好画面分析模型，再生成成片。')
-  if (reason === 'ffmpeg') return t('找不到 FFmpeg，无法生成成片。')
+    ? 'Selected model does not support image analysis.'
+    : 'Please configure a visual model.'
+  if (reason === 'ffmpeg') return 'FFmpeg not found. Cannot process video.'
   return ''
+}
+
+function parseTimeToSeconds(val: string): number | null {
+  const trimmed = val.trim()
+  if (!trimmed) return null
+  const parts = trimmed.split(':')
+  if (parts.some(p => isNaN(Number(p)) || p === '')) return null
+  if (parts.length === 3) {
+    return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2])
+  } else if (parts.length === 2) {
+    return Number(parts[0]) * 60 + Number(parts[1])
+  } else if (parts.length === 1) {
+    return Number(parts[0])
+  }
+  return null
 }
 
 export default function CreativeImport({ onImported, blocked = false, onBlocked, onExample, exampleBusy = false }: {
@@ -147,6 +161,25 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     try { node.focus() } catch { /* focus is optional */ }
     try { node.scrollIntoView({ block: 'center' }) } catch { /* not a browser */ }
   }, [assist])
+  const [customStartTime, setCustomStartTime] = useState('')
+  const [customEndTime, setCustomEndTime] = useState('')
+  const [maxClips, setMaxClips] = useState<string>('auto')
+  const [downloadQuality, setDownloadQuality] = useState<'720p' | '1080p'>('1080p')
+
+  const handleTimeRangeChange = (startStr: string, endStr: string) => {
+    setCustomStartTime(startStr)
+    setCustomEndTime(endStr)
+    const s = parseTimeToSeconds(startStr) ?? 0
+    const e = parseTimeToSeconds(endStr)
+    if (e !== null && e > s) {
+      sourceWindowOverride.current = { start: s, end: e }
+      setOptions(prev => ({ ...prev, source_window: { start: s, end: e } }))
+    } else if (!endStr.trim()) {
+      sourceWindowOverride.current = undefined
+      setOptions(prev => ({ ...prev, source_window: null }))
+    }
+  }
+
   const [platforms, setPlatforms] = useState<string[]>(initialPlatforms.current.platforms)
   const [preferences, setPreferences] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -297,11 +330,11 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     trackAutoChoiceOverridden({ field: 'platform', stage: 'pre_import' }, true)
   }
   const readyToStart = (trigger: 'paste' | 'drop' | 'button', next?: { url?: string; file?: File | null }, readiness: ImportReadiness | null = currentReadiness) => {
-    if (blocked) { trackExperience('import_blocked', { reason: 'setup_required', placement: 'home_setup' }); setError(t("请先连接 AI 服务，再导入视频。")); onBlocked?.(); return false }
+    if (blocked) { trackExperience('import_blocked', { reason: 'setup_required', placement: 'home_setup' }); setError("Please connect an AI model service before importing video."); onBlocked?.(); return false }
     const nextFile = next && 'file' in next ? next.file : file
     const nextUrl = next?.url ?? url
     const nextSource = next?.file ? 'file' : next?.url ? 'link' : source
-    if (nextSource === 'file' ? !nextFile : !nextUrl.trim()) { setError(t("请先添加视频文件或链接")); return false }
+    if (nextSource === 'file' ? !nextFile : !nextUrl.trim()) { setError("Please provide a video file or online video URL."); return false }
     const reason = submissionBlock(readiness, !!subtitle, settled, { source: nextSource, allowLinkWithoutWhisper: allowLink })
     if (reason === 'pending') { setError(blockMessage(reason, readiness)); return false }
     trackAsrReadiness(asrReadinessProperties(readiness, !!subtitle))
@@ -467,8 +500,12 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
         body.append('source_window_start', String(windowChoice.start ?? 0))
         body.append('source_window_end', String(windowChoice.end))
       }
+      if (maxClips && maxClips !== 'auto') {
+        body.append('max_clips', maxClips)
+      }
+      body.append('download_quality', downloadQuality)
       if (subtitle) body.append('subtitle', subtitle)
-      body.append('name', file && source === 'file' ? file.name.replace(/\.[^.]+$/, '') : t("智能剪辑"))
+      body.append('name', file && source === 'file' ? file.name.replace(/\.[^.]+$/, '') : "Apyclipy Smart Clip")
       if (source === 'file' && file) body.append('video', file)
       else { body.append('url', url.trim()); if (browser) body.append('browser', browser) }
       body.append('features', JSON.stringify(featureSnapshot()))
@@ -515,27 +552,143 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
     </section>
   }
   return <section className="ac-creative-import">
-    <h1 className="ac-title">{t("放入视频，直接生成可发布成片。")}</h1>
-    <p className="studio-muted">{t("选择发布平台，AI 会自动挑选内容、完成剪辑与渲染。生成后可直接下载或继续编辑。")}</p>
+    <h1 className="ac-title">Drop video to generate social-ready clips automatically.</h1>
+    <p className="studio-muted">Select destination platforms; AI automatically selects the best moments, edits, and formats your video clips.</p>
     <div className="studio-import-box">
       {dropZone ? <div className={`ac-dropzone${dragging ? ' is-hot' : ''}`} onDragEnter={event => { event.preventDefault(); setDragging(true) }} onDragOver={event => { event.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
-        <p className="ac-dropzone-title">{t('把链接或视频放在这里')}</p>
-        <p className="ac-dropzone-hint">{t('粘贴链接，或拖入一个视频文件。')}</p>
-        <label className="studio-field ac-dropzone-field"><span className="studio-sr">{t("视频链接")}</span><textarea placeholder={t("粘贴 B 站或 YouTube 视频链接")} value={url} onChange={event => { setPending(null); clearPreview(); setUrl(event.target.value); if (event.target.value) { setFile(null); setSource('link') } }} onBlur={event => { const value = event.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }} disabled={busy}/></label>
-        {file && <p className="ac-dropzone-file"><span>{file.name}</span><button type="button" className="studio-link" disabled={busy} onClick={() => setFile(null)}>{t('移除')}</button></p>}
-        <label className="studio-link ac-dropzone-file-label">{t('选择一个视频文件')}<input type="file" aria-label={t("视频文件")} accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={event => { const picked = event.target.files?.[0] || null; if (picked) arm('drop', { file: picked }) }}/></label>
+        <div className="ac-dropzone-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="4" />
+            <path d="m10 9 6 3-6 3V9z" />
+          </svg>
+        </div>
+        <p className="ac-dropzone-title">Drop video link or media file here</p>
+        <p className="ac-dropzone-hint">Paste YouTube or online video URL, or drag and drop a video file.</p>
+        <label className="studio-field ac-dropzone-field">
+          <span className="studio-sr">Video Link</span>
+          <textarea
+            placeholder="Paste YouTube or video link (e.g. https://www.youtube.com/watch?v=...)"
+            value={url}
+            onChange={event => { setPending(null); clearPreview(); setUrl(event.target.value); if (event.target.value) { setFile(null); setSource('link') } }}
+            onBlur={event => { const value = event.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }}
+            disabled={busy}
+          />
+        </label>
+        {file && <p className="ac-dropzone-file"><span>{file.name}</span><button type="button" className="studio-link" disabled={busy} onClick={() => setFile(null)}>Remove</button></p>}
+        <label className="studio-link ac-dropzone-file-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }} aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" x2="12" y1="3" y2="15" />
+          </svg>
+          Select local video file
+          <input type="file" aria-label="Video file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={event => { const picked = event.target.files?.[0] || null; if (picked) arm('drop', { file: picked }) }}/>
+        </label>
       </div> : <>
-        <div className="studio-row"><Segmented ariaLabel={t("导入来源")} value={source} onChange={v=>!busy&&setSource(v)} options={[{value:'link',label:t("链接导入")},{value:'file',label:t("文件导入")}]}/></div>
-        {source==='link'?<label className="studio-field"><span className="studio-sr">{t("视频链接")}</span><textarea placeholder={t("粘贴 B 站或 YouTube 视频链接")} value={url} onChange={e=>{ setPending(null); clearPreview(); setUrl(e.target.value) }} onBlur={e => { const value = e.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }} onPaste={event => { const text = event.clipboardData.getData('text'); if (importUrlKind(text) && shouldAutoStart(pasteFlag, 'paste')) { event.preventDefault(); arm('paste', { url: text.trim() }) } }} disabled={busy}/></label>:<label className="studio-file"><span>{file?.name || t("选择一段视频")}</span><input type="file" aria-label={t("视频文件")} accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={e=>{ const picked = e.target.files?.[0] || null; setFile(picked); if (picked) arm('drop', { file: picked }) }}/><small>MP4 / MOV / MKV / WEBM / AVI</small></label>}
+        <div className="studio-row"><Segmented ariaLabel="Import source" value={source} onChange={v=>!busy&&setSource(v)} options={[{value:'link',label:'Link Import'},{value:'file',label:'File Import'}]}/></div>
+        {source==='link'?<label className="studio-field"><span className="studio-sr">Video Link</span><textarea placeholder="Paste YouTube or video link" value={url} onChange={e=>{ setPending(null); clearPreview(); setUrl(e.target.value) }} onBlur={e => { const value = e.target.value.trim(); if (importUrlKind(value)) void runInspect(value, 'blur') }} onPaste={event => { const text = event.clipboardData.getData('text'); if (importUrlKind(text) && shouldAutoStart(pasteFlag, 'paste')) { event.preventDefault(); arm('paste', { url: text.trim() }) } }} disabled={busy}/></label>:<label className="studio-file"><span>{file?.name || 'Select a video'}</span><input type="file" aria-label="Video file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" disabled={busy} onChange={e=>{ const picked = e.target.files?.[0] || null; setFile(picked); if (picked) arm('drop', { file: picked }) }}/><small>MP4 / MOV / MKV / WEBM / AVI</small></label>}
       </>}
       {templatesOn && visualOn && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <StyleProbeLine sourceKey={source === 'file' ? (file ? `file:${file.name}:${file.size}:${file.lastModified}` : null) : (url.trim() ? `url:${url.trim()}` : null)} />}
-      {remembered ? <div className="ac-platform-line"><p>{t('为 {{names}} 制作', { names })}</p><button type="button" className="studio-link" disabled={busy} onClick={() => setPlatformOpen(open => !open)}>{t('改')}</button></div> : null}
+      {remembered ? <div className="ac-platform-line"><p>Producing for {names}</p><button type="button" className="studio-link" disabled={busy} onClick={() => setPlatformOpen(open => !open)}>Change</button></div> : null}
       {(!remembered || platformOpen) && <PlatformPicker value={platforms} onChange={changePlatforms} disabled={busy}/>}
       {templatesOn && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <TemplatePicker visual={visualOn} disabled={busy} value={options.html_template} sourceKey={source === 'file' ? (file ? `file:${file.name}:${file.size}:${file.lastModified}` : null) : (url.trim() ? `url:${url.trim()}` : null)} url={url} file={file} sourceKind={source === 'file' ? (file ? 'file' : 'none') : (url.trim() ? 'link' : 'none')} onChange={(html_template: HtmlTemplateChoice) => setOptions({...options, html_template})}/>}
-      {!templatesOn && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <div className="studio-field"><span>{t('竖版版式')}</span><Select aria-label={t('竖版版式')} disabled={busy} value={options.portrait_style || 'auto'} options={[{value:'auto',label:t('按平台默认')},{value:'interview',label:t('访谈式（人物窗口）')},{value:'podcast',label:t('播客式（满屏）')}]} onChange={portrait_style=>setOptions({...options,portrait_style})}/><small>{t('仅调整竖版布局，字幕与发布文案语言仍按平台。')}</small></div>}
-      {templatesOn && options.html_template === 'classic' && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <div className="studio-field"><span>{t('竖版版式')}</span><Select aria-label={t('竖版版式')} disabled={busy} value={options.portrait_style || 'auto'} options={[{value:'auto',label:t('按平台默认')},{value:'interview',label:t('访谈式（人物窗口）')},{value:'podcast',label:t('播客式（满屏）')}]} onChange={portrait_style=>setOptions({...options,portrait_style})}/><small>{t('仅调整竖版布局，字幕与发布文案语言仍按平台。')}</small></div>}
-      <OutputCaptionsSwitch label={t('字幕')} hint={t('关闭后成片不带字幕。标题只在封面上，不会烧进视频。')} />
-      <details className="studio-details"><summary>{t("有特别要求？（选填）")}</summary><label className="studio-field"><span className="studio-sr">{t("制作要求")}</span><input aria-label={t("制作要求")} placeholder={t("例如：保留完整观点或挑战过程")} maxLength={1000} value={options.instruction} disabled={busy} onChange={e=>setOptions({...options,instruction:e.target.value})}/></label></details>
+      {!templatesOn && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <div className="studio-field"><span>Vertical Layout</span><Select aria-label="Vertical Layout" disabled={busy} value={options.portrait_style || 'auto'} options={[{value:'auto',label:'Platform Default'},{value:'interview',label:'Interview (Windowed)'},{value:'podcast',label:'Podcast (Full Screen)'}]} onChange={portrait_style=>setOptions({...options,portrait_style})}/><small>Only adjusts vertical framing layout.</small></div>}
+      {templatesOn && options.html_template === 'classic' && platforms.some(platform => !['bilibili', 'youtube_long', 'original'].includes(platform)) && <div className="studio-field"><span>Vertical Layout</span><Select aria-label="Vertical Layout" disabled={busy} value={options.portrait_style || 'auto'} options={[{value:'auto',label:'Platform Default'},{value:'interview',label:'Interview (Windowed)'},{value:'podcast',label:'Podcast (Full Screen)'}]} onChange={portrait_style=>setOptions({...options,portrait_style})}/><small>Only adjusts vertical framing layout.</small></div>}
+      <OutputCaptionsSwitch label="Subtitles / Captions" hint="When disabled, videos are rendered without burned-in subtitles." />
+      <details className="studio-details"><summary>Any special instructions? (Optional)</summary><label className="studio-field"><span className="studio-sr">Instructions</span><input aria-label="Instructions" placeholder="e.g. Focus on key arguments or intense reactions" maxLength={1000} value={options.instruction} disabled={busy} onChange={e=>setOptions({...options,instruction:e.target.value})}/></label></details>
+      <details className="studio-details studio-advanced-details" open={Boolean(customStartTime || customEndTime || maxClips !== 'auto' || downloadQuality !== '1080p')}>
+        <summary className="studio-details-summary">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <b>Advanced Clipping & Download Settings</b>
+          </span>
+          <span className="studio-muted" style={{ fontSize: '12px' }}>Segment Crop · Target Clips · Quality</span>
+        </summary>
+        <div className="studio-bento-panel">
+          <div className="studio-bento-grid">
+            <div className="studio-bento-card">
+              <div className="studio-bento-card-head">
+                <span className="studio-bento-title">Target Clip Count</span>
+                <span className="ac-mono studio-bento-tag">{maxClips === 'auto' ? 'AI Auto' : `${maxClips} clips`}</span>
+              </div>
+              <p className="studio-muted studio-bento-desc">AI automatically selects the most viral highlights</p>
+              <select
+                className="ac-input"
+                value={maxClips}
+                disabled={busy}
+                onChange={e => setMaxClips(e.target.value)}
+              >
+                <option value="auto">Auto (4–6 clips based on content)</option>
+                <option value="1">1 clip (Best single highlight)</option>
+                <option value="2">2 clips</option>
+                <option value="3">3 clips</option>
+                <option value="4">4 clips</option>
+                <option value="5">5 clips</option>
+                <option value="10">Up to 10 clips</option>
+              </select>
+            </div>
+
+            <div className="studio-bento-card">
+              <div className="studio-bento-card-head">
+                <span className="studio-bento-title">Download & Processing Quality</span>
+                <span className="ac-mono studio-bento-tag">{downloadQuality}</span>
+              </div>
+              <p className="studio-muted studio-bento-desc">Fast 720p mode reduces download time by 3-4x</p>
+              <select
+                className="ac-input"
+                value={downloadQuality}
+                disabled={busy}
+                onChange={e => setDownloadQuality(e.target.value as '720p' | '1080p')}
+              >
+                <option value="1080p">1080p Full HD (Standard Quality)</option>
+                <option value="720p">720p High Speed (Fast Download 3-4x)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="studio-bento-range-box">
+            <div className="studio-bento-card-head">
+              <span className="studio-bento-title">Selective Segment Crop (Only process this window)</span>
+              {(customStartTime || customEndTime) && (
+                <span className="ac-mono studio-bento-tag" style={{ color: 'var(--ac-accent)' }}>
+                  {customStartTime || '00:00:00'} → {customEndTime || 'End'}
+                </span>
+              )}
+            </div>
+            <p className="studio-muted studio-bento-desc" style={{ marginBottom: '10px' }}>
+              For long 1-4 hour videos, crop your preferred section to save time
+            </p>
+            <div className="studio-bento-range-inputs">
+              <div className="studio-bento-input-group">
+                <span className="studio-muted" style={{ fontSize: '12px' }}>Start Time</span>
+                <input
+                  type="text"
+                  className="ac-input ac-input--mono"
+                  placeholder="00:00:00"
+                  value={customStartTime}
+                  disabled={busy}
+                  onChange={e => handleTimeRangeChange(e.target.value, customEndTime)}
+                />
+              </div>
+              <span className="studio-bento-range-sep">—</span>
+              <div className="studio-bento-input-group">
+                <span className="studio-muted" style={{ fontSize: '12px' }}>End Time</span>
+                <input
+                  type="text"
+                  className="ac-input ac-input--mono"
+                  placeholder="00:15:00"
+                  value={customEndTime}
+                  disabled={busy}
+                  onChange={e => handleTimeRangeChange(customStartTime, e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
       {issues.length > 0 && <div className="studio-readiness" role="status">
         {issues.map(item => <div className="studio-readiness-row" key={item.key}>
           <StatusDot tone={item.code === 'whisper_installing' || item.code === 'whisper_model_downloading' ? 'accent' : 'muted'} label={issueCopy(item)} />
@@ -574,18 +727,18 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
         onDismiss={() => { clearPreview(); setUrl(''); setPending(null); firstWindowDecided.current = false }}
       />}
       {platforms.includes('youtube_long') && <p className="studio-muted" role="note">{longFormNotice(longGate.durationSec, platforms)}</p>}
-      {assist && <details className="studio-details" open><summary>{t("下载遇到登录限制时")}</summary><BrowserCookieControl assist browser={browser} busy={busy} onChange={setBrowser} selectRef={browserRef} /></details>}
-      {pending && <div className="ac-undo" role="status"><span>{t('即将开始制作。')}</span><button type="button" className="ac-undo-action" onClick={undo}>{t('撤销')}</button></div>}
-      <div className="studio-row studio-import-bottom"><div><span className="studio-muted">{t('会按所选平台自动制作，数量由素材内容决定。')}</span>{!hidePreferences && <button className="studio-link studio-preferences-link" disabled={busy} onClick={()=>setPreferences(true)}>{t("高级偏好")}</button>}</div><Btn variant="cta" loading={busy} onClick={() => submit('button')}>{busy?t("正在生成"):t("生成成片")}</Btn></div>
+      {assist && <details className="studio-details" open><summary>Browser Login Cookie Assist</summary><BrowserCookieControl assist browser={browser} busy={busy} onChange={setBrowser} selectRef={browserRef} /></details>}
+      {pending && <div className="ac-undo" role="status"><span>Starting production soon...</span><button type="button" className="ac-undo-action" onClick={undo}>Undo</button></div>}
+      <div className="studio-row studio-import-bottom"><div><span className="studio-muted">Clips will be generated automatically for chosen platforms.</span>{!hidePreferences && <button className="studio-link studio-preferences-link" disabled={busy} onClick={()=>setPreferences(true)}>Advanced Preferences</button>}</div><Btn variant="cta" loading={busy} onClick={() => submit('button')}>{busy ? "Generating..." : "Generate Videos"}</Btn></div>
       <TranscriptionGatePrompt state={recovery} busy={busy} onInstall={() => recover.install()} onRetry={() => recover.retry()} onContinue={() => continueAfterRecovery(null)} navigate={navigate}/>
       {error&&<p className="studio-error" role="alert">{error}</p>}
     </div>
-    <Dialog open={preferences} onClose={()=>setPreferences(false)} title={t("制作偏好")} description={t("默认由 AI 匹配。你指定的选项优先，生成后也可以修改。")} footer={<div className="studio-actions"><Btn onClick={()=>{setOptions({...defaultImportOptions,instruction:options.instruction});setSubtitle(null);setBrowser('')}}>{t("恢复自动")}</Btn><Btn variant="cta" onClick={()=>setPreferences(false)}>{t("完成")}</Btn></div>}>
+    <Dialog open={preferences} onClose={()=>setPreferences(false)} title="Production Preferences" description="AI matches options automatically. Your choices take priority and can be edited later." footer={<div className="studio-actions"><Btn onClick={()=>{setOptions({...defaultImportOptions,instruction:options.instruction});setSubtitle(null);setBrowser('')}}>Reset to Auto</Btn><Btn variant="cta" onClick={()=>setPreferences(false)}>Done</Btn></div>}>
       <ImportPreferences value={options} onChange={setOptions}/>
-      <label className="studio-field">{t("已有字幕（选填）")}<input type="file" accept=".srt" aria-label={t("已有字幕")} onChange={e=>setSubtitle(e.target.files?.[0] || null)}/>{subtitle&&<small>{subtitle.name}<button className="studio-link" onClick={()=>setSubtitle(null)}>{t("移除")}</button></small>}</label>
-      {source==='link'&&<details className="studio-details"><summary>{t("下载遇到登录限制时")}</summary><BrowserCookieControl browser={browser} busy={busy} onChange={setBrowser} assist={false} /></details>}
+      <label className="studio-field">Existing Subtitles (Optional)<input type="file" accept=".srt" aria-label="Existing subtitles" onChange={e=>setSubtitle(e.target.files?.[0] || null)}/>{subtitle&&<small>{subtitle.name}<button className="studio-link" onClick={()=>setSubtitle(null)}>Remove</button></small>}</label>
+      {source==='link'&&<details className="studio-details"><summary>Browser Login Cookie Assist</summary><BrowserCookieControl browser={browser} busy={busy} onChange={setBrowser} assist={false} /></details>}
     </Dialog>
-    <Dialog open={longGate.open} onClose={() => setLongGate(prev => ({ ...prev, open: false }))} title={t('YouTube 横屏')} description={youtubeLongOnlyTooShort ? <>{longFormNotice(longGate.durationSec, platforms)} {t('请再选一个其他平台。')}</> : longFormNotice(longGate.durationSec, platforms)} footer={youtubeLongOnlyTooShort ? <div className="studio-actions"><Btn onClick={() => setLongGate(prev => ({ ...prev, open: false }))}>{t('知道了')}</Btn></div> : <div className="studio-actions"><Btn onClick={() => setLongGate(prev => ({ ...prev, open: false }))}>{t('取消')}</Btn><Btn variant="cta" onClick={() => { const trigger = longGate.trigger || 'button'; setLongGate(prev => ({ ...prev, open: false })); void submit(trigger, undefined, true) }}>{t('确认并开始')}</Btn></div>} />
-    <Dialog open={firstWindowGate.open} onClose={() => setFirstWindowGate(prev => ({ ...prev, open: false }))} title={t('首次素材建议')} description={t('第一次建议先试 30 分钟以内，确认模型配置没问题')} footer={<div className="studio-actions" data-testid="t2-first-window-dialog"><Btn onClick={() => setFirstWindowGate(prev => ({ ...prev, open: false }))}>{t('取消')}</Btn><Btn onClick={() => { firstWindowDecided.current = true; sourceWindowOverride.current = null; setOptions(prev => ({ ...prev, source_window: null })); setFirstWindowGate(prev => ({ ...prev, open: false })); void submit(firstWindowGate.trigger || 'button', undefined, true) }}>{t('处理全片')}</Btn><Btn variant="cta" onClick={() => { firstWindowDecided.current = true; sourceWindowOverride.current = { start: 0, end: FIRST_WINDOW_END_SEC }; setOptions(prev => ({ ...prev, source_window: { start: 0, end: FIRST_WINDOW_END_SEC } })); setFirstWindowGate(prev => ({ ...prev, open: false })); void submit(firstWindowGate.trigger || 'button', undefined, true) }}>{t('只处理前 30 分钟')}</Btn></div>} />
+    <Dialog open={longGate.open} onClose={() => setLongGate(prev => ({ ...prev, open: false }))} title="YouTube Landscape" description={youtubeLongOnlyTooShort ? <>{longFormNotice(longGate.durationSec, platforms)} Please choose another platform.</> : longFormNotice(longGate.durationSec, platforms)} footer={youtubeLongOnlyTooShort ? <div className="studio-actions"><Btn onClick={() => setLongGate(prev => ({ ...prev, open: false }))}>Got it</Btn></div> : <div className="studio-actions"><Btn onClick={() => setLongGate(prev => ({ ...prev, open: false }))}>Cancel</Btn><Btn variant="cta" onClick={() => { const trigger = longGate.trigger || 'button'; setLongGate(prev => ({ ...prev, open: false })); void submit(trigger, undefined, true) }}>Confirm & Start</Btn></div>} />
+    <Dialog open={firstWindowGate.open} onClose={() => setFirstWindowGate(prev => ({ ...prev, open: false }))} title="Initial Video Suggestion" description="For the first trial, testing with under 30 minutes is recommended to verify AI configuration." footer={<div className="studio-actions" data-testid="t2-first-window-dialog"><Btn onClick={() => setFirstWindowGate(prev => ({ ...prev, open: false }))}>Cancel</Btn><Btn onClick={() => { firstWindowDecided.current = true; sourceWindowOverride.current = null; setOptions(prev => ({ ...prev, source_window: null })); setFirstWindowGate(prev => ({ ...prev, open: false })); void submit(firstWindowGate.trigger || 'button', undefined, true) }}>Process Full Video</Btn><Btn variant="cta" onClick={() => { firstWindowDecided.current = true; sourceWindowOverride.current = { start: 0, end: FIRST_WINDOW_END_SEC }; setOptions(prev => ({ ...prev, source_window: { start: 0, end: FIRST_WINDOW_END_SEC } })); setFirstWindowGate(prev => ({ ...prev, open: false })); void submit(firstWindowGate.trigger || 'button', undefined, true) }}>Process First 30 Min</Btn></div>} />
   </section>
 }

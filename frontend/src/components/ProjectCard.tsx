@@ -484,6 +484,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onRetry, o
           <div className="ac-card-foot">
             <time className="meta" dateTime={project.created_at}>{dayjs(project.created_at).fromNow()}</time>
             <div className="ac-card-actions">
+              {(normalizedStatus === 'processing' || normalizedStatus === 'importing' || isSourceDownloading(project) || project.status === 'pending') && (
+                <Btn
+                  variant="text"
+                  size="sm"
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    try {
+                      await projectApi.cancelProject(project.id)
+                      message.success(t("任务已取消"))
+                      if (onRetry) onRetry(project.id)
+                    } catch (err) {
+                      message.error(t("取消失败"))
+                    }
+                  }}
+                  title={t("取消")}
+                  style={{ color: '#ef4444' }}
+                >
+                  {t("取消")}
+                </Btn>
+              )}
               {(normalizedStatus === 'processing' || normalizedStatus === 'importing') && !isManaged && <Btn variant="text" size="sm" loading={isRetrying} onClick={() => handleRetry()} title={t("重新提交任务")}><Icon.Refresh /></Btn>}
               <Btn variant="danger" size="sm" onClick={() => setDeleteOpen(true)} title={t("删除")} aria-label={t("删除")}><Icon.Trash /></Btn>
             </div>

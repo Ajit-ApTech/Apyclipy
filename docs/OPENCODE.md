@@ -1,52 +1,50 @@
-# 接入 opencode CLI（AutoClip MCP）
+# Connect AutoClip to opencode CLI (MCP)
 
-[opencode](https://opencode.ai) 是终端里的 AI agent。把 AutoClip 作为本地 MCP server 接进去之后，
-你在 opencode 里给出一个视频路径，它就会调 AutoClip 出片——切高光、看结果、导 9:16、发平台，
-不用自己拼 `autoclip` 参数。
+[opencode](https://opencode.ai) is a terminal AI agent. Register AutoClip as a local MCP server and you can
+point opencode at a video path — it will call AutoClip to clip highlights, export vertical videos, and publish.
 
-| 你想做的 | 怎么做 |
+| Goal | How |
 |---|---|
-| 一条命令接入（推荐） | `autoclip mcp install opencode` |
-| 写进某个项目 | `autoclip mcp install opencode --scope project --dir <项目目录>` |
-| 只看配置片段、不改文件 | `autoclip mcp install opencode --print` |
-| 现有配置带注释，确认要重写 | 加 `--force`（先备份为 `opencode.json.bak`） |
+| One-command setup (recommended) | `autoclip mcp install opencode` |
+| Project-only setup | `autoclip mcp install opencode --scope project --dir <dir>` |
+| Print the snippet only | `autoclip mcp install opencode --print` |
+| Rewrite a commented (JSONC) config | add `--force` (backup written first) |
 
-## 1. 前置条件
+## 1. Prerequisites
 
-- AutoClip CLI 装好（MCP server 与 CLI 同源）：`pip install -r requirements.txt && pip install -e .`，
-  见 [CLI / MCP 指南](CLI_AND_MCP.md) 第 1 节；不装包也能用仓库里的 `python -m backend.mcp_server`
-- `ffmpeg` 在 PATH、模型能连上：`autoclip doctor` 检查（云端 key，或本地 Ollama / LM Studio）
-- opencode 已安装（`opencode --version`）
+- AutoClip CLI installed (`pip install -r requirements.txt && pip install -e .`) — see the CLI / MCP guide;
+  running from the repo (`python -m backend.mcp_server`) also works
+- `ffmpeg` on PATH and a working model: `autoclip doctor`
+- opencode installed (`opencode --version`)
 
-## 2. 一键接入
+## 2. One-command setup
 
 ```bash
 autoclip mcp install opencode
-# ✓ 已写入 ~/.config/opencode/opencode.json（Windows: %USERPROFILE%\.config\opencode\opencode.json）
+# ✓ wrote ~/.config/opencode/opencode.json (Windows: %USERPROFILE%\.config\opencode\opencode.json)
 ```
 
-命令做的事：
+The command detects the launch command (`autoclip` → `autoclip-mcp` → `python -m backend.mcp_server`),
+merges `mcp.autoclip` into your config without touching other keys, and backs the old file up as
+`opencode.json.bak`. Re-running keeps your custom fields on an existing `autoclip` entry while updating
+`type` / `command`. The module fallback refreshes `cwd` and prepends the current installation to `PYTHONPATH`,
+preserving other module paths, environment variables, `timeout`, and `enabled`.
+If `opencode.jsonc` exists it becomes the target; when both `opencode.json` and `opencode.jsonc` exist
+and the jsonc already defines `mcp`, the installer refuses with an explicit message instead of writing
+a config that would not take effect. Commented (JSONC) configs are left untouched unless you pass `--force`.
 
-- 按 `autoclip` → `autoclip-mcp` → `python -m backend.mcp_server` 的顺序探测启动命令（结果在输出的 `entry` 里）
-- 把 `mcp.autoclip` **合并**写进配置（`type: local`），其它键原样保留；文件已存在时先备份 `opencode.json.bak`
-- 重装**不会丢同名条目里的自定义字段**：更新 `type` / `command`；模块回退时刷新 `cwd`，
-  并把当前安装路径放到 `PYTHONPATH` 最前面，保留其余模块路径、环境变量、`timeout` 和 `enabled=false`（后者会给出提示）
-- 优先识别已有配置文件：只有 `opencode.jsonc` 时写它；`opencode.json` 和 `opencode.jsonc` 同时存在且 jsonc 里已有 `mcp` 段时，
-  **写入前直接拒绝**（jsonc 覆盖 json，避免“写入成功但实际加载旧配置”）
-- 配置带注释 / 尾随逗号（JSONC，opencode 支持）时默认**不动文件**、只打印片段；加 `--force` 才会先备份再重写成纯 JSON
-
-| 参数 | 作用 |
+| Option | Effect |
 |---|---|
-| `--scope global`（默认） | 全局配置 `~/.config/opencode/opencode.json` |
-| `--scope project --dir <目录>` | 只在这个项目生效：`<目录>/opencode.json` |
-| `--name <名字>` | 配置里的服务名（默认 `autoclip`；opencode 里工具会带 `autoclip_` 前缀） |
-| `--print` / `--json` | 只打印片段 / 输出机器可读报告 |
+| `--scope global` (default) | `~/.config/opencode/opencode.json` |
+| `--scope project --dir <dir>` | `<dir>/opencode.json` (project-only) |
+| `--print` / `--json` | print the snippet / machine-readable report |
 
-环境变量：设了 `OPENCODE_CONFIG` 就严格写它指向的文件，不改写同目录的 `.jsonc`；设了 `XDG_CONFIG_HOME` 用 `$XDG_CONFIG_HOME/opencode/opencode.json`。
+`OPENCODE_CONFIG` selects the exact global file to write, without switching to a sibling `.jsonc`;
+`XDG_CONFIG_HOME` is honored.
 
-## 3. 手动配置
+## 3. Manual config
 
-`opencode.json`（或 `opencode.jsonc`）：
+`opencode.json` (or `opencode.jsonc`):
 
 ```json
 {
@@ -54,50 +52,44 @@ autoclip mcp install opencode
   "mcp": {
     "autoclip": {
       "type": "local",
-      "command": ["C:\\Users\\<你>\\autoclip\\venv\\Scripts\\autoclip.exe", "mcp"],
+      "command": ["C:\\Users\\<you>\\autoclip\\venv\\Scripts\\autoclip.exe", "mcp"],
       "enabled": true
     }
   }
 }
 ```
 
-- macOS / Linux：`"command": ["/path/to/autoclip/venv/bin/autoclip", "mcp"]`
-- 没装包（在仓库里跑）：`"command": ["<python 绝对路径>", "-m", "backend.mcp_server"], "cwd": "<仓库根目录>", "environment": {"PYTHONPATH": "<仓库根目录>"}`
+- macOS / Linux: `"command": ["/path/to/autoclip/venv/bin/autoclip", "mcp"]`
+- Running from the repo without installing:
+  `"command": ["<python>", "-m", "backend.mcp_server"], "cwd": "<repo>", "environment": {"PYTHONPATH": "<repo>"}`
 
-opencode 会合并多处配置（全局 + 项目），项目里的同名 server 覆盖全局。
+opencode merges global and project configs; a project entry with the same name overrides the global one.
 
-## 4. 在 opencode 里出片
+## 4. Use it
 
-重启 opencode（或新开会话）让它加载 MCP，然后直接说：
+Restart opencode (or start a new session) so it loads the MCP server, then just ask:
 
 ```text
-把 D:\Videos\lecture.mp4 切片                        # 用桌面应用里配好的模型
-把 C:\Users\me\Downloads\podcast.mp4 切片，用 ollama   # 本地模型，不用 key
-刚才那个项目第 2 条切片导成 Shorts
+Clip D:\Videos\lecture.mp4
+Clip C:\Users\me\Downloads\podcast.mp4 using ollama
+Export clip 2 of that project as Shorts
 ```
 
-opencode 会依次调 `check_environment`、`clip_video`（长视频走 `start_clip_job` + `get_job_status` 轮询），
-按 **评分 · 时间段 · 标题** 把结果整理给你。产物和桌面应用共用一个数据目录，桌面端首页能直接看到。
+opencode calls `check_environment` and `clip_video` (or `start_clip_job` + `get_job_status` for long videos)
+and reports clips by score, time range, and title. Output shares the same data directory as the desktop app.
 
-## 5. Agent skill（可选，建议装）
+## 5. Agent skill (optional)
 
-`skills/autoclip/SKILL.md` 教 agent 何时用哪个工具、`min_score` 怎么调、结果怎么呈现：
+Copy `skills/autoclip/` to `~/.config/opencode/skills/autoclip/` (or `.opencode/skills/` inside a project).
+opencode also reads `~/.claude/skills/`, so Claude Code installs are picked up automatically.
 
-```bash
-cp -r skills/autoclip ~/.config/opencode/skills/autoclip   # 全局（Windows 放 %USERPROFILE%\.config\opencode\skills\）
-```
+## 6. Troubleshooting
 
-只在一个项目里生效，就放 `.opencode/skills/autoclip/`。opencode 也会读 `~/.claude/skills/`，给 Claude Code 装过的无需重复。
-
-## 6. 排错
-
-| 现象 | 处理 |
+| Symptom | Fix |
 |---|---|
-| opencode 里没有 `autoclip` 工具 | 用 `--print` 确认目标文件路径；同目录只留一份 `opencode.json` / `.jsonc`；新开会话再试 |
-| 报「jsonc 里已有 mcp 段」 | `opencode.jsonc` 覆盖 `opencode.json`：只保留一份配置，或手动把片段合并进 jsonc |
-| 工具能列出但一调就报错 | 先在终端 `autoclip doctor`：多半是 ffmpeg 不在 PATH、Whisper 没装（传 `srt_path` 可绕过）、模型没 key |
-| 切片数为 0 | 让 opencode 用 `min_score=0.5` 重试；纯音乐 / 无对话的视频本身不适合切高光 |
-| 首次出片特别慢 | 无字幕时本地 Whisper 转写，首次要下模型；已有 SRT 就传进去，或改用 `ollama` |
-| MCP 协议被日志污染 | AutoClip 已把 stdout 留给协议（print 都进 stderr）；自建包装脚本时别往 stdout 打日志 |
+| No `autoclip` tools in opencode | Run with `--print`, verify the target path, keep only one `opencode.json` / `.jsonc`, start a new session |
+| Tools listed but calls fail | Run `autoclip doctor` (ffmpeg / Whisper / model key) |
+| Zero clips | Retry with `min_score=0.5`; pure music / no dialogue has no highlights |
+| First run is slow | Local Whisper transcription downloads a model; pass an SRT to skip it |
 
-相关：[CLI / MCP 全量说明](CLI_AND_MCP.md) · [opencode MCP 文档](https://opencode.ai/docs/mcp-servers/) · [opencode skills 文档](https://opencode.ai/docs/skills/)
+Links: [CLI / MCP guide (Chinese)](CLI_AND_MCP.md) · [opencode MCP docs](https://opencode.ai/docs/mcp-servers/) · [opencode skills docs](https://opencode.ai/docs/skills/)

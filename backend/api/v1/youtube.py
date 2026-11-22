@@ -59,6 +59,8 @@ class YouTubeDownloadRequest(BaseModel):
     project_name: str
     video_category: Optional[str] = "default"
     browser: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
 
 class YouTubeVideoInfo(BaseModel):
     title: str
@@ -216,6 +218,31 @@ async def create_youtube_download_task(request: YouTubeDownloadRequest):
         if request.browser:
             ydl_opts['cookiesfrombrowser'] = (request.browser.lower(),)
 
+        def _parse_time_str(val: Optional[str]) -> Optional[float]:
+            if not val:
+                return None
+            try:
+                parts = [float(p) for p in val.strip().split(':')]
+                if len(parts) == 3:
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2]
+                elif len(parts) == 2:
+                    return parts[0] * 60 + parts[1]
+                elif len(parts) == 1:
+                    return parts[0]
+            except Exception:
+                pass
+            return None
+
+        sw_start = _parse_time_str(request.start_time) or 0.0
+        sw_end = _parse_time_str(request.end_time)
+        if sw_end is not None and sw_end > sw_start:
+            try:
+                import yt_dlp.utils
+                ydl_opts['download_ranges'] = yt_dlp.utils.download_range_func(None, [(sw_start, sw_end)])
+                ydl_opts['force_keyframes_at_cuts'] = True
+            except Exception:
+                logger.warning("Failed to configure download_ranges in youtube api", exc_info=True)
+
         # 可选兜底客户端
         yt_client_env = os.getenv('AUTOCLIP_YT_CLIENT', '').strip().lower()
         if yt_client_env in {"android", "ios", "tv"}:
@@ -351,6 +378,20 @@ async def get_youtube_task_status(task_id: str):
     
     return download_tasks[task_id]
 
+@router.post("/tasks/{task_id}/cancel")
+async def cancel_youtube_download(task_id: str):
+    """取消YouTube下载任务"""
+    task = download_tasks.get(task_id)
+    if task:
+        task.status = "cancelled"
+        task.error_message = "下载已由用户取消"
+        pid = getattr(task, "project_id", None)
+        if pid:
+            from backend.core.project_cancellation import cancel
+            cancel(pid)
+    return {"status": "success", "message": "下载已取消"}
+
+
 @router.get("/tasks")
 async def get_all_youtube_tasks():
     """获取所有YouTube下载任务"""
@@ -410,6 +451,10 @@ def make_download_progress_hook(project_id: str, task_id: str, min_interval: flo
     state = {"last_write": 0.0, "last_value": DOWNLOAD_PROGRESS_START}
 
     def hook(d):
+        task = download_tasks.get(task_id)
+        from backend.core.project_cancellation import is_cancelled, is_stopped, _marker_requests_stop
+        if is_cancelled(project_id) or is_stopped(project_id) or _marker_requests_stop(project_id) or (task is not None and getattr(task, "status", None) == "cancelled"):
+            raise Exception("Download cancelled by user")
         if d.get("status") != "downloading":
             return
         total = d.get("total_bytes") or d.get("total_bytes_estimate")
@@ -477,6 +522,31 @@ async def process_youtube_download_task(task_id: str, request: YouTubeDownloadRe
         
         if request.browser:
             ydl_opts['cookiesfrombrowser'] = (request.browser.lower(),)
+
+        def _parse_time_str(val: Optional[str]) -> Optional[float]:
+            if not val:
+                return None
+            try:
+                parts = [float(p) for p in val.strip().split(':')]
+                if len(parts) == 3:
+                    return parts[0] * 3600 + parts[1] * 60 + parts[2]
+                elif len(parts) == 2:
+                    return parts[0] * 60 + parts[1]
+                elif len(parts) == 1:
+                    return parts[0]
+            except Exception:
+                pass
+            return None
+
+        sw_start = _parse_time_str(request.start_time) or 0.0
+        sw_end = _parse_time_str(request.end_time)
+        if sw_end is not None and sw_end > sw_start:
+            try:
+                import yt_dlp.utils
+                ydl_opts['download_ranges'] = yt_dlp.utils.download_range_func(None, [(sw_start, sw_end)])
+                ydl_opts['force_keyframes_at_cuts'] = True
+            except Exception:
+                logger.warning("Failed to configure download_ranges in youtube api", exc_info=True)
 
         # 可选兜底客户端
         yt_client_env = os.getenv('AUTOCLIP_YT_CLIENT', '').strip().lower()

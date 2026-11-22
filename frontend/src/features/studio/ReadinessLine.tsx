@@ -72,15 +72,13 @@ export default function ReadinessLine({
                 textDecoration: clickable ? 'underline dotted' : 'none',
                 textUnderlineOffset: 3,
               }}
-              title={clickable ? t('打开对应设置') : undefined}
+              title={clickable ? 'Open Settings' : undefined}
             >
-              <span>{t(item.title)}</span>
+              <span>{item.title}</span>
               {' '}
               <span aria-hidden>{markGlyph(item.mark)}</span>
-              {item.detail ? <>{' '}{item.detail.startsWith('本地') || item.detail === '未启用' || item.detail === 'FFmpeg' || item.detail === '转写' || item.detail === '…'
-                ? t(item.detail)
-                : item.detail}</> : null}
-              {item.badge ? <>{' '}{t(item.badge)}</> : null}
+              {item.detail ? <>{' '}{item.detail}</> : null}
+              {item.badge ? <>{' '}{item.badge}</> : null}
             </button>
             {item.needsFix && (
               <Btn

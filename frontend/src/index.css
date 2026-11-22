@@ -1,27 +1,36 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&family=Noto+Sans+SC:wght@400;500&display=swap');
 
-/* ===== AutoClip · Calm Premium design tokens (see DESIGN.md) ===== */
+/* ===== Apyclipy · Modern Electric Obsidian Theme ===== */
 :root{
-  --ac-bg:#F6F5F3; --ac-card:#FFFFFF; --ac-ink:#1A1A19; --ac-sub:#6E6B66; --ac-muted:#A8A59F;
-  --ac-line:#EBE9E4; --ac-line-2:#F0EEEA; --ac-accent:#2D6BFF; --ac-thumb:#EEECE8; --ac-sel:#EFEDE9;
-  --ac-cta-bg:#1A1A19; --ac-cta-fg:#FFFFFF; --ac-ok:#5BB36A; --ac-error:#E66A5C; --ac-warn:#E6B23C;
-  --ac-sel:#EFEDE9;
-  --ac-font-sans:"Geist","PingFang SC","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --ac-bg:#F8FAFC; --ac-card:#FFFFFF; --ac-ink:#0F172A; --ac-sub:#475569; --ac-muted:#94A3B8;
+  --ac-line:#E2E8F0; --ac-line-2:#F1F5F9; --ac-accent:#6366F1; --ac-thumb:#F1F5F9; --ac-sel:#EEF2FF;
+  --ac-cta-bg:#4F46E5; --ac-cta-fg:#FFFFFF; --ac-ok:#10B981; --ac-error:#EF4444; --ac-warn:#F59E0B;
+  --ac-font-sans:"Geist",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   --ac-font-serif:"Instrument Serif",Georgia,serif;
   --ac-font-mono:"Geist Mono",ui-monospace,monospace;
-  --ac-shadow:0 1px 2px rgba(26,26,25,.03), 0 8px 24px rgba(26,26,25,.05);
-  --ac-ease-out:cubic-bezier(.2,.7,.2,1); --ac-t-micro:100ms; --ac-t-short:200ms;
+  --ac-shadow-sm: 0 1px 2px rgba(15,23,42,.05);
+  --ac-shadow: 0 1px 3px rgba(15,23,42,.05), 0 10px 25px rgba(15,23,42,.05);
+  --ac-shadow-md: 0 4px 16px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.04);
+  --ac-shadow-lg: 0 20px 40px rgba(15,23,42,.12), 0 1px 3px rgba(15,23,42,.05);
+  --ac-glass-bg: color-mix(in srgb, var(--ac-card) 85%, transparent);
+  --ac-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ac-t-micro: 120ms;
+  --ac-t-short: 200ms;
+  --ac-t-smooth: 320ms;
   --ac-space-2:2px; --ac-space-xs:4px; --ac-space-sm:8px; --ac-space-md:16px;
   --ac-space-lg:24px; --ac-space-xl:32px; --ac-space-2xl:40px; --ac-space-3xl:56px;
-  --ac-radius:16px; --ac-radius-sm:10px; --ac-radius-pill:999px;
+  --ac-radius:18px; --ac-radius-sm:12px; --ac-radius-pill:999px;
 }
 [data-theme="dark"]{
-  --ac-bg:#19181A; --ac-card:#211F22; --ac-ink:#ECEAE6; --ac-sub:#A6A29B; --ac-muted:#76726C;
-  --ac-line:#2C2A2D; --ac-line-2:#232124; --ac-accent:#5A8BFF; --ac-thumb:#262428; --ac-sel:#2A282B;
-  --ac-cta-bg:#ECEAE6; --ac-cta-fg:#19181A;
-  --ac-sel:#2A282B;
-  --ac-shadow:0 1px 2px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.28);
+  --ac-bg:#0B0D13; --ac-card:#131722; --ac-ink:#F8FAFC; --ac-sub:#94A3B8; --ac-muted:#64748B;
+  --ac-line:#1E2433; --ac-line-2:#161A26; --ac-accent:#818CF8; --ac-thumb:#171B26; --ac-sel:#1E2333;
+  --ac-cta-bg:#6366F1; --ac-cta-fg:#FFFFFF; --ac-ok:#10B981; --ac-error:#EF4444; --ac-warn:#F59E0B;
+  --ac-shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --ac-shadow: 0 4px 20px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.3);
+  --ac-shadow-md: 0 8px 30px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+  --ac-shadow-lg: 0 24px 50px rgba(0,0,0,.7), 0 4px 12px rgba(0,0,0,.4);
+  --ac-glass-bg: color-mix(in srgb, var(--ac-card) 80%, transparent);
 }
 html,body,#root{background:var(--ac-bg);color:var(--ac-ink);}
 body{font-family:var(--ac-font-sans);-webkit-font-smoothing:antialiased;}
@@ -83,58 +92,56 @@ body{font-family:var(--ac-font-sans);-webkit-font-smoothing:antialiased;}
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--ac-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f0f0f;
-  color: #ffffff;
+  background-color: var(--ac-bg);
+  color: var(--ac-ink);
 }
 
 #root {
   min-height: 100vh;
-  background-color: #0f0f0f;
+  background-color: var(--ac-bg);
 }
 
 .ant-layout {
   min-height: 100vh;
-  background-color: #0f0f0f !important;
+  background-color: var(--ac-bg) !important;
 }
 
 .ant-layout-header {
-  background-color: #1a1a1a !important;
-  border-bottom: 1px solid #2d2d2d !important;
+  background-color: var(--ac-card) !important;
+  border-bottom: 1px solid var(--ac-line) !important;
 }
 
 .ant-layout-content {
-  background-color: #0f0f0f !important;
+  background-color: var(--ac-bg) !important;
 }
 
-/* 自定义滚动条 - 深色主题 */
+/* 自定义滚动条 - 平滑细腻 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: transparent;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: var(--ac-line);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: var(--ac-muted);
 }
 
 /* 合集横向滚动容器样式 */
 .collections-scroll-container {
   scrollbar-width: thin;
-  scrollbar-color: #404040 #1a1a1a;
+  scrollbar-color: var(--ac-line) transparent;
 }
 
 .collections-scroll-container::-webkit-scrollbar {
@@ -142,173 +149,183 @@ body {
 }
 
 .collections-scroll-container::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: transparent;
   border-radius: 3px;
 }
 
 .collections-scroll-container::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: var(--ac-line);
   border-radius: 3px;
 }
 
 .collections-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: var(--ac-muted);
 }
 
-/* Ant Design 深色主题覆盖 */
+/* Ant Design Calm Premium 主题映射 */
 .ant-card {
-  background-color: #1a1a1a !important;
-  border: 1px solid #2d2d2d !important;
-  border-radius: 12px !important;
+  background-color: var(--ac-card) !important;
+  border: 1px solid var(--ac-line) !important;
+  border-radius: var(--ac-radius) !important;
 }
 
 .ant-card-meta-title {
-  color: #ffffff !important;
+  color: var(--ac-ink) !important;
 }
 
 .ant-card-meta-description {
-  color: #cccccc !important;
+  color: var(--ac-sub) !important;
 }
 
 .ant-typography {
-  color: #ffffff !important;
+  color: var(--ac-ink) !important;
 }
 
 .ant-typography-caption {
-  color: #999999 !important;
+  color: var(--ac-muted) !important;
 }
 
 /* 输入框样式增强 */
 .ant-input {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  border-color: var(--ac-line) !important;
+  color: var(--ac-ink) !important;
+  border-radius: var(--ac-radius-sm) !important;
 }
 
 .ant-input:focus {
-  border-color: #4facfe !important;
-  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2) !important;
+  border-color: var(--ac-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ac-accent) 15%, transparent) !important;
 }
 
 .ant-input:hover {
-  border-color: #555555 !important;
+  border-color: var(--ac-muted) !important;
 }
 
 .ant-input::placeholder {
-  color: #888888 !important;
+  color: var(--ac-muted) !important;
 }
 
 /* 密码输入框 */
 .ant-input-password {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  border-color: var(--ac-line) !important;
+  color: var(--ac-ink) !important;
+  border-radius: var(--ac-radius-sm) !important;
 }
 
 .ant-input-password .ant-input-suffix {
-  color: #888888 !important;
+  color: var(--ac-muted) !important;
 }
 
 .ant-input-password .ant-input-suffix:hover {
-  color: #4facfe !important;
+  color: var(--ac-accent) !important;
 }
 
 /* 数字输入框 */
 .ant-input-number {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  border-color: var(--ac-line) !important;
+  color: var(--ac-ink) !important;
+  border-radius: var(--ac-radius-sm) !important;
 }
 
 .ant-input-number .ant-input-number-input {
-  background-color: #2d2d2d !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  color: var(--ac-ink) !important;
 }
 
 /* 选择器样式 */
 .ant-select {
-  color: #ffffff !important;
+  color: var(--ac-ink) !important;
 }
 
 .ant-select-selector {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  border-color: var(--ac-line) !important;
+  color: var(--ac-ink) !important;
+  border-radius: var(--ac-radius-sm) !important;
 }
 
 .ant-select-selector:hover {
-  border-color: #555555 !important;
+  border-color: var(--ac-muted) !important;
 }
 
 .ant-select-focused .ant-select-selector {
-  border-color: #4facfe !important;
-  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2) !important;
+  border-color: var(--ac-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ac-accent) 15%, transparent) !important;
 }
 
 .ant-select-dropdown {
-  background-color: #1a1a1a !important;
-  border: 1px solid #2d2d2d !important;
-  border-radius: 8px !important;
+  background-color: var(--ac-card) !important;
+  border: 1px solid var(--ac-line) !important;
+  border-radius: var(--ac-radius-sm) !important;
+  box-shadow: var(--ac-shadow-lg) !important;
 }
 
 .ant-select-item {
-  color: #ffffff !important;
+  color: var(--ac-ink) !important;
+  border-radius: 6px !important;
+  margin: 2px 4px !important;
 }
 
 .ant-select-item:hover {
-  background-color: #2d2d2d !important;
+  background-color: var(--ac-line-2) !important;
 }
 
 .ant-select-item-option-selected {
-  background-color: #4facfe !important;
-  color: #ffffff !important;
+  background-color: color-mix(in srgb, var(--ac-accent) 12%, transparent) !important;
+  color: var(--ac-accent) !important;
+  font-weight: 500 !important;
 }
 
-/* 按钮样式增强 */
+/* 按钮样式增强 — Calm Premium */
 .ant-btn {
-  border-radius: 8px !important;
+  border-radius: var(--ac-radius-pill) !important;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all var(--ac-t-short) var(--ac-ease-out);
+  font-family: inherit;
 }
 
 .ant-btn-primary {
-  background-color: #4facfe !important;
-  border-color: #4facfe !important;
-  color: #ffffff !important;
+  background-color: var(--ac-cta-bg) !important;
+  border-color: var(--ac-cta-bg) !important;
+  color: var(--ac-cta-fg) !important;
 }
 
 .ant-btn-primary:hover {
-  background-color: #00a8ff !important;
-  border-color: #00a8ff !important;
+  background-color: var(--ac-cta-bg) !important;
+  border-color: var(--ac-cta-bg) !important;
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  box-shadow: var(--ac-shadow-md);
 }
 
 .ant-btn-default {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-card) !important;
+  border-color: var(--ac-line) !important;
+  color: var(--ac-ink) !important;
 }
 
 .ant-btn-default:hover {
-  background-color: #404040 !important;
-  border-color: #555555 !important;
-  color: #ffffff !important;
+  background-color: var(--ac-line-2) !important;
+  border-color: var(--ac-muted) !important;
+  color: var(--ac-ink) !important;
 }
 
 /* 表单样式 */
 .ant-form-item-label > label {
-  color: #ffffff !important;
+  color: var(--ac-ink) !important;
   font-weight: 500;
 }
 
 .ant-form-item-explain-error {
-  color: #ff6b6b !important;
+  color: var(--ac-error) !important;
   font-size: 12px;
 }
 
 .ant-form-item-explain-warning {
-  color: #faad14 !important;
+  color: var(--ac-warn) !important;
   font-size: 12px;
 }
 

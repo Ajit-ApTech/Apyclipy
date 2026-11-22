@@ -17,5 +17,5 @@ export function readPreference(): LanguagePreference {
     const value = localStorage.getItem(LANGUAGE_STORAGE_KEY)
     if (supportedLanguages.includes(value as Language)) return value as Language
   } catch { /* Storage may be unavailable. */ }
-  return 'system'
+  return 'en'
 }

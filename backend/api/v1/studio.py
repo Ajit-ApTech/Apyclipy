@@ -238,7 +238,7 @@ async def import_visual(
     portrait_style: Literal['auto', 'interview', 'podcast'] = Form('auto'),
     html_template: Optional[Literal['editorial', 'street', 'news', 'cinema', 'classic']] = Form(None),
     recommended_template: Optional[Literal['editorial', 'street', 'classic']] = Form(None),
-    brand_outro_enabled: bool = Form(True),
+    brand_outro_enabled: bool = Form(False),
     subtitle: Optional[UploadFile] = File(None),
     name: str = Form('智能剪辑', max_length=200),
     url: Optional[str] = Form(None),
@@ -246,6 +246,8 @@ async def import_visual(
     video: Optional[UploadFile] = File(None),
     source_window_start: Optional[float] = Form(None, ge=0),
     source_window_end: Optional[float] = Form(None, gt=0),
+    max_clips: Optional[int] = Form(None, ge=1, le=50),
+    download_quality: Literal['720p', '1080p'] = Form('1080p'),
     features: str = Form(''),
     db: Session = Depends(get_db),
 ):
@@ -296,8 +298,10 @@ async def import_visual(
             recommended_template=recommended_template,
             branding={'outro_enabled': brand_outro_enabled},
             source_window=source_window,
+            max_clips=max_clips,
+            download_quality=download_quality,
         )
-        project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or '智能剪辑', project_type=ProjectType.DEFAULT, source_url=url, settings={'creative': {'goal': goal}, 'smart_import': prefs.model_dump(), 'import_staging': not prefs.auto_start, 'creative_browser': browser, 'platforms': prefs.platforms, 'brand_outro_enabled': prefs.branding.outro_enabled}))
+        project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or '智能剪辑', project_type=ProjectType.DEFAULT, source_url=url, settings={'creative': {'goal': goal}, 'smart_import': prefs.model_dump(), 'import_staging': not prefs.auto_start, 'creative_browser': browser, 'platforms': prefs.platforms, 'brand_outro_enabled': prefs.branding.outro_enabled, 'max_clips': max_clips, 'download_quality': download_quality}))
     except BaseException:
         if staged is not None:
             staged.unlink(missing_ok=True)
