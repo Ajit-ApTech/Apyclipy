@@ -250,6 +250,8 @@ async def import_visual(
     audio_track: Optional[UploadFile] = File(None),
     bg_music: Optional[UploadFile] = File(None),
     auto_ducking: bool = Form(True),
+    audio_sync_mode: Literal['highlight', 'start', 'sync', 'custom'] = Form('highlight'),
+    audio_custom_start: float = Form(0.0),
     name: str = Form('Apyclipy Smart Clip', max_length=200),
     url: Optional[str] = Form(None),
     browser: Optional[Literal['chrome', 'edge', 'firefox', 'safari']] = Form(None),
@@ -347,6 +349,8 @@ async def import_visual(
             'audio_track': f'audio_track{audio_track_ext}' if audio_track_bytes else None,
             'bg_music': f'bg_music{bg_music_ext}' if bg_music_bytes else None,
             'auto_ducking': auto_ducking,
+            'audio_sync_mode': audio_sync_mode,
+            'audio_custom_start': audio_custom_start,
         }
         project = ProjectService(db).create_project(ProjectCreate(name=name.strip() or 'Apyclipy Smart Clip', project_type=ProjectType.DEFAULT, source_url=url, settings=settings_dict))
     except BaseException:

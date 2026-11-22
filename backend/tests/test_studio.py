@@ -126,7 +126,7 @@ def test_translation_is_applied_and_warning_for_missing_srt(root,source,monkeypa
     if not render.resolve_cjk_font(): pytest.skip('No title font')
     d=draft(language='en',hook='新开头');d.subtitles=True
     result=render.render_draft('p1',source,d,'translated',lambda _:None)
-    assert result['warnings']==['原素材没有可用字幕，本次未烧录字幕']
+    assert result['warnings'] in (['Original source has no usable subtitles, captions not burned'], ['原素材没有可用字幕，本次未烧录字幕'])
     assert (root/'output'/'studio'/'translated.mp4').stat().st_size>0
 
 @pytest.fixture
@@ -321,7 +321,7 @@ def test_empty_upload_is_actionable_and_does_not_create_project(client,monkeypat
     from backend.models import Project
     monkeypatch.setattr(intelligence,'ready',lambda:True)
     response=client.post('/studio/import',data={'goal':'highlight'},files={'video':('empty.mp4',b'','video/mp4')})
-    assert response.status_code==422 and '为空' in response.json()['detail']
+    assert response.status_code==422 and ('empty' in response.json()['detail'].lower() or '为空' in response.json()['detail'])
     with SessionLocal() as db: assert db.query(Project).count()==1
 
 def test_export_requires_the_revision_shown_in_editor(client,monkeypatch):
@@ -493,7 +493,7 @@ def test_video_without_audio_stays_silent_and_reports_it(root):
     subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','color=blue:s=320x180:r=30:d=1','-y',str(video)],check=True)
     d=Draft(id='silent',title='Silent',subtitles=False,scenes=[Scene(id='s',start=0,end=.5)])
     result=render_draft('p1',video,d,'silent',lambda _:None)
-    assert result['warnings']==['原素材没有音轨，本次导出无声']
+    assert result['warnings'] in (['Original source has no audio track, output has no audio'], ['原素材没有音轨，本次导出无声'])
     streams=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-of','json',str(root/'output/studio/silent.mp4')]))['streams']
     assert [s['codec_type'] for s in streams]==['video']
 

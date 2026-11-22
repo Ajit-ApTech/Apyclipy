@@ -50,6 +50,12 @@ function formatLiveDetail(detail: string | undefined, _t?: unknown): string {
     return `Processing failed: ${failMatch[1]}`
   }
   const map: Record<string, string> = {
+    '正在通读全文挑选片段': 'Reading transcript to identify key moments...',
+    '正在使用AI生成字幕...': 'Generating subtitles with AI...',
+    '正在使用AI生成字幕': 'Generating subtitles with AI...',
+    'AI字幕生成完成': 'AI subtitles generated',
+    '素材准备完成': 'Media preparation completed',
+    '开始字幕处理': 'Starting subtitle processing...',
     '模型思考中': 'AI model thinking...',
     '开始片段定位': 'Locating highlight segments...',
     '片段定位完成': 'Highlight segments located',

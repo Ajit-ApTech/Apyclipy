@@ -147,6 +147,8 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
   const [audioTrack, setAudioTrack] = useState<File | null>(null)
   const [bgMusic, setBgMusic] = useState<File | null>(null)
   const [autoDucking, setAutoDucking] = useState<boolean>(true)
+  const [audioSyncMode, setAudioSyncMode] = useState<'highlight' | 'start' | 'sync' | 'custom'>('highlight')
+  const [audioCustomStart, setAudioCustomStart] = useState<number>(0)
   const [options, setOptions] = useState<ImportOptions>({...defaultImportOptions})
   const templatesOn = useFlag('pkg_templates_v1') === true
   const visualOn = useFlag('pkg_template_picker_visual') === true
@@ -511,6 +513,8 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
       if (audioTrack) body.append('audio_track', audioTrack)
       if (bgMusic) body.append('bg_music', bgMusic)
       body.append('auto_ducking', String(autoDucking))
+      body.append('audio_sync_mode', audioSyncMode)
+      body.append('audio_custom_start', String(audioCustomStart))
       body.append('name', file && source === 'file' ? file.name.replace(/\.[^.]+$/, '') : "Apyclipy Smart Clip")
       if (source === 'file' && file) body.append('video', file)
       else { body.append('url', url.trim()); if (browser) body.append('browser', browser) }
@@ -677,6 +681,34 @@ export default function CreativeImport({ onImported, blocked = false, onBlocked,
                     />
                     <span>Auto-duck music during voiceover</span>
                   </label>
+                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--ac-border)' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ac-muted)', display: 'block', marginBottom: '4px' }}>Music Alignment / Auto-Clip:</span>
+                    <select
+                      className="ac-input"
+                      style={{ fontSize: '12px', padding: '5px 8px', width: '100%' }}
+                      value={audioSyncMode}
+                      disabled={busy}
+                      onChange={e => setAudioSyncMode(e.target.value as any)}
+                    >
+                      <option value="highlight">Auto Highlight (Peak Energy / Chorus)</option>
+                      <option value="start">From Beginning (0:00)</option>
+                      <option value="sync">Sync with Video Timestamps</option>
+                      <option value="custom">Custom Start Offset (seconds)</option>
+                    </select>
+                    {audioSyncMode === 'custom' && (
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        placeholder="Start seconds (e.g. 15)"
+                        className="ac-input"
+                        style={{ marginTop: '6px', fontSize: '12px', padding: '4px 8px', width: '100%' }}
+                        value={audioCustomStart || ''}
+                        onChange={e => setAudioCustomStart(parseFloat(e.target.value) || 0)}
+                        disabled={busy}
+                      />
+                    )}
+                  </div>
                 </>
               ) : (
                 <label className="ac-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textAlign: 'center', fontSize: '13px', color: 'var(--ac-accent)' }}>

@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 
-STUDIO_TRANSCRIBING_MESSAGE = '正在生成字幕'
-STUDIO_PRODUCTION_MESSAGE = '正在制作可发布成片'
+STUDIO_TRANSCRIBING_MESSAGE = 'Generating subtitles'
+STUDIO_PRODUCTION_MESSAGE = 'Rendering final clips'
 
 # Transcription is the slow part of SUBTITLE (minutes for a long talk), so it gets almost the whole
 # stage band: sub-steps 5 → 95 of SUBTITLE, i.e. the project bar moves from 10% to 24% with the audio.
@@ -138,7 +138,7 @@ class TranscriptionProgress:
         if percent <= self.last_percent or (percent < 100 and self.last_at is not None and now - self.last_at < self.interval):
             return
         self.last_percent, self.last_at = percent, now
-        emit_progress(self.project_id, "SUBTITLE", "正在使用AI生成字幕...", subpercent=transcription_subpercent(fraction))
+        emit_progress(self.project_id, "SUBTITLE", "Generating subtitles with AI...", subpercent=transcription_subpercent(fraction))
         self._studio(lambda analysis: analysis.update(message=STUDIO_TRANSCRIBING_MESSAGE, percent=percent))
 
     def _studio(self, update) -> None:
@@ -284,7 +284,7 @@ class SimplePipelineAdapter:
             
             # 更新进度
             from backend.services.simple_progress import emit_progress
-            emit_progress(self.project_id, "SUBTITLE", "正在使用AI生成字幕...", subpercent=TRANSCRIBE_START_SUBPERCENT)
+            emit_progress(self.project_id, "SUBTITLE", "Generating subtitles with AI...", subpercent=TRANSCRIBE_START_SUBPERCENT)
             
             # 使用当前所选转写服务生成字幕
             try:
@@ -320,13 +320,35 @@ class SimplePipelineAdapter:
                     _cut_audio_window(asr_input, start, end, temp_audio)
                     asr_input = temp_audio
                     shift = start
+
+                # Determine language & task (translate to English if user selected English)
+                asr_language = "auto"
+                asr_task = "transcribe"
+                try:
+                    from backend.services.studio import store
+                    proj_doc = store.read(self.project_id) or {}
+                    plan_data = proj_doc.get('plan') or {}
+                    pref_dict = plan_data.get('preferences') or {}
+                    over_dict = plan_data.get('overrides') or {}
+                    si_dict = proj_doc.get('smart_import') or {}
+                    chosen_lang = over_dict.get('language') or pref_dict.get('language') or si_dict.get('language') or 'auto'
+                    if chosen_lang == 'en':
+                        asr_language = 'en'
+                        asr_task = 'translate'
+                    elif chosen_lang and chosen_lang not in ('source', 'auto'):
+                        asr_language = chosen_lang
+                        asr_task = 'transcribe'
+                except Exception as lang_err:
+                    logger.debug("Failed reading language preference: %s", lang_err)
+
                 try:
                     with reporting(TranscriptionProgress(self.project_id)):
                         srt_path = generate_subtitle_for_video(
                             asr_input,
                             output_path=output_path,
                             method="auto",
-                            language="auto"
+                            language=asr_language,
+                            task=asr_task
                         )
                 finally:
                     TranscriptionProgress.finish_studio(self.project_id)
@@ -338,7 +360,7 @@ class SimplePipelineAdapter:
                         start, end = window
                         _apply_source_window_to_srt(Path(srt_path), start, end, shift=shift)
                     logger.info(f"转写生成字幕成功: {srt_path}")
-                    emit_progress(self.project_id, "SUBTITLE", "AI字幕生成完成", subpercent=TRANSCRIBE_DONE_SUBPERCENT)
+                    emit_progress(self.project_id, "SUBTITLE", "AI subtitles generated", subpercent=TRANSCRIBE_DONE_SUBPERCENT)
                     return srt_path
                 logger.warning("转写生成字幕失败")
                     
@@ -380,7 +402,7 @@ class SimplePipelineAdapter:
         from backend.services.studio.intelligence import text_json
         from backend.utils.text_processor import TextProcessor
         llm_usage.set_stage("clip_finder")
-        emit_progress(self.project_id, "ANALYZE", "正在通读全文挑选片段")
+        emit_progress(self.project_id, "ANALYZE", "Reading transcript to identify key moments...")
         try:
             entries = TextProcessor.parse_srt(Path(srt_path))
             with llm_usage.timed("clip_finder"):
@@ -501,7 +523,7 @@ class SimplePipelineAdapter:
             # 阶段1: 素材准备。先确认 LLM 可用，否则后面每一步都是白跑
             from backend.core.project_cancellation import checkpoint
             checkpoint(self.project_id)
-            emit_progress(self.project_id, "INGEST", "素材准备完成")
+            emit_progress(self.project_id, "INGEST", "Media preparation completed")
             # 源视频比最短片段还短、或没有音轨又没带字幕：字幕路线注定失败，先拦下，不调用任何模型（RC156 #10/#11）
             # The one preflight (#418 rewrite), before any paid call, SRT attached or not: the source is decided
             # first (unreadable / under 1 s / too short / no audio without SRT), then transcription.
@@ -555,7 +577,7 @@ class SimplePipelineAdapter:
             )
 
             # 阶段2: 字幕处理
-            emit_progress(self.project_id, "SUBTITLE", "开始字幕处理")
+            emit_progress(self.project_id, "SUBTITLE", "Starting subtitle processing...")
             
             if decision['skip_transcription'] and srt_candidate.is_file():
                 logger.info(f"R3: 复用现有SRT文件: {srt_candidate}")
@@ -806,7 +828,7 @@ class SimplePipelineAdapter:
             # 明确失败：带阶段和下一步提示，前端失败态 / 应用内反馈直接展示
             error_msg = e.user_message()
             logger.error(f"流水线在 {e.stage} 阶段失败: {error_msg}")
-            emit_progress(self.project_id, e.stage, f"处理失败：{error_msg}")
+            emit_progress(self.project_id, e.stage, f"Processing failed: {error_msg}")
             failed = {
                 "status": "failed",
                 "project_id": self.project_id,
@@ -836,7 +858,7 @@ class SimplePipelineAdapter:
             logger.exception(error_msg)
             
             # 发送失败状态
-            emit_progress(self.project_id, "DONE", f"处理失败: {error_msg}")
+            emit_progress(self.project_id, "DONE", f"Processing failed: {error_msg}")
 
             failed = {
                 "status": "failed",

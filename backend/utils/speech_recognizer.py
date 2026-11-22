@@ -69,6 +69,7 @@ class SpeechRecognitionConfig:
     """语音识别配置"""
     method: SpeechRecognitionMethod = SpeechRecognitionMethod.WHISPER_LOCAL
     language: LanguageCode = LanguageCode.AUTO
+    task: str = "transcribe"  # "transcribe" or "translate"
     model: str = "base"  # Whisper模型大小
     timeout: int = 0  # 秒。0：本地 Whisper 按音长封顶（local_whisper_budget_seconds）；其它识别路径不额外限制
     output_format: str = "srt"  # 输出格式
@@ -685,7 +686,7 @@ class SpeechRecognizer:
             whisper_runtime.ensure_on_path()  # 让 faster_whisper 可导入
             from faster_whisper import WhisperModel  # 延迟导入：运行时安装目录里的包
 
-            language = None if config.language == LanguageCode.AUTO else config.language.value.split("-")[0]
+            language = None if (config.language == LanguageCode.AUTO or config.task == "translate") else config.language.value.split("-")[0]
             models_dir = str(whisper_runtime.get_models_dir() / "hub")
             device, compute_type = resolve_local_whisper_backend()
             from backend.services.whisper_model_manager import canonical_model_name, get_model_manager
@@ -737,9 +738,12 @@ class SpeechRecognizer:
                     clock.check()
                     seg_iter = None
                     try:
+                        transcribe_kwargs = {"language": language, "vad_filter": vad_filter, "word_timestamps": True}
+                        if getattr(config, 'task', None) and config.task != 'transcribe':
+                            transcribe_kwargs["task"] = config.task
                         try:
                             seg_iter, info = model.transcribe(
-                                audio_input, language=language, vad_filter=vad_filter, word_timestamps=True,
+                                audio_input, **transcribe_kwargs
                             )
                         except TypeError as exc:
                             if 'metadata_errors' not in str(exc) or not isinstance(audio_input, str):
@@ -767,7 +771,7 @@ class SpeechRecognizer:
                             audio_input = np.frombuffer(decoded.stdout, np.int16).astype(np.float32) / 32768.0
                             clock.check()
                             seg_iter, info = model.transcribe(
-                                audio_input, language=language, vad_filter=vad_filter, word_timestamps=True,
+                                audio_input, **transcribe_kwargs
                             )
                         heard = _positive_duration(getattr(info, "duration", None))
                         if heard is not None:
@@ -1084,7 +1088,8 @@ def generate_subtitle_for_video(video_path: Path, output_path: Optional[Path] = 
                                enable_punctuation: bool = True,
                                enable_speaker_diarization: bool = False,
                                timeout: int = 0,
-                               api_key: Optional[str] = None) -> Path:
+                               api_key: Optional[str] = None,
+                               task: str = "transcribe") -> Path:
     """
     为视频生成字幕文件的便捷函数
     
@@ -1130,6 +1135,7 @@ def generate_subtitle_for_video(video_path: Path, output_path: Optional[Path] = 
     config = SpeechRecognitionConfig(
         method=SpeechRecognitionMethod(method) if method != "auto" else SpeechRecognitionMethod.WHISPER_LOCAL,
         language=LanguageCode(language),
+        task=task,
         model=model,
         enable_fallback=enable_fallback,
         enable_timestamps=enable_timestamps,

@@ -2,7 +2,7 @@ import type { AttemptReceipt } from '../../analytics/workflow'
 export type Goal = 'content' | 'highlight' | 'promo'
 export type Language = 'source' | 'zh' | 'en' | 'ja'
 export type SubtitleStyle = 'clean' | 'bold' | 'box' | 'accent'
-export const subtitleStyles: { value: SubtitleStyle; label: string }[] = [{ value: 'clean', label: '简洁描边' }, { value: 'bold', label: '粗体大字' }, { value: 'box', label: '底色字幕条' }, { value: 'accent', label: '醒目黄字' }]
+export const subtitleStyles: { value: SubtitleStyle; label: string }[] = [{ value: 'clean', label: 'Clean Outline' }, { value: 'bold', label: 'Bold Large' }, { value: 'box', label: 'Box Background' }, { value: 'accent', label: 'Vibrant Yellow' }]
 export interface SubtitleCue { start: number; end: number; text: string }
 export interface FramingStatus { status: 'installed' | 'not_installed' | 'installing' | 'error'; progress: number; message: string; size_mb: number; cooldown_seconds?: number }
 export interface AutoFrameResult { window_fraction: number; scenes: { id: string; crop_x: number | null; crop_track: CropPoint[] | null; faces: number; samples: number; shots: number; fit_shots: number; switches: number }[] }
@@ -126,16 +126,16 @@ export interface Workspace {
   resume_point?: { point: string; label: string } | null
   analysis: null | { run_id?: string; status: 'running' | 'awaiting_confirmation' | 'completed' | 'failed'; phase?: 'screening' | 'production' | 'rendering'; message?: string; percent?: number; progress_percent?: number; progress_stage?: string; progress_approximate?: boolean; progress_since?: number; progress_message?: string; created_at?: string; error?: string; error_code?: string; upstream_error_type?: string; failure_stage?: string; billable_calls_before_failure?: number; quota_precheck?: 'skipped' | 'ok' | 'exhausted' | 'unavailable'; provider?: string; coverage?: { duration?:number; note: string; sample_interval: number }; outcome?: 'completed' | 'partial' | 'failed' }
 }
-export const languages = [{ value: 'source', label: '原语言' }, { value: 'zh', label: '简体中文' }, { value: 'en', label: 'English' }, { value: 'ja', label: '日本語' }] as const
+export const languages = [{ value: 'source', label: 'Original (Source)' }, { value: 'zh', label: 'Chinese' }, { value: 'en', label: 'English' }, { value: 'ja', label: 'Japanese' }] as const
 export const emptyWorkspace: Workspace = { drafts: [], events: [], jobs: [], analysis: null }
 export function draftDuration(draft: Draft) { return draft.scenes.reduce((sum, scene) => sum + scene.end - scene.start, 0) }
 export function draftError(draft: Draft, sourceDuration?: number): string | null {
-  if (!draft.title.trim()) return '请填写成片标题'
-  if (!draft.scenes.length) return '至少保留一个镜头'
-  if (draft.scenes.length > 30) return '单条成片最多 30 个镜头'
-  if (draft.scenes.some(s => !Number.isFinite(s.start) || !Number.isFinite(s.end) || s.start < 0 || s.end - s.start < .1)) return '镜头起止无效，每段至少 0.1 秒'
-  if (sourceDuration !== undefined && draft.scenes.some(s => s.end > sourceDuration + .05)) return '镜头终点超出原视频时长'
-  if (draftDuration(draft) > 1800) return '单条成片不能超过 30 分钟'
+  if (!draft.title.trim()) return 'Please enter a clip title'
+  if (!draft.scenes.length) return 'Keep at least one scene'
+  if (draft.scenes.length > 30) return 'Maximum 30 scenes per clip'
+  if (draft.scenes.some(s => !Number.isFinite(s.start) || !Number.isFinite(s.end) || s.start < 0 || s.end - s.start < .1)) return 'Invalid scene duration (must be at least 0.1s)'
+  if (sourceDuration !== undefined && draft.scenes.some(s => s.end > sourceDuration + .05)) return 'Scene end exceeds source video duration'
+  if (draftDuration(draft) > 1800) return 'Clip duration cannot exceed 30 minutes'
   return null
 }
 export function moveScene(draft: Draft, index: number, delta: number): Draft {
@@ -190,4 +190,4 @@ export interface ImportPlan {
   overrides: ImportOptions
 }
 export const defaultImportOptions: ImportOptions = {goal:'auto', language:'source', aspect:null, duration:null, instruction:'', portrait_style:'auto'}
-export const goalLabels = {auto:'AI 自动匹配', content:'内容切片', highlight:'精彩高光', promo:'推广成片'} as const
+export const goalLabels = {auto:'AI Auto Match', content:'Content Clips', highlight:'Viral Highlights', promo:'Promotional Reel'} as const

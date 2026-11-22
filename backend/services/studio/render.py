@@ -11,7 +11,7 @@ from backend.services.studio.intelligence import text_json, validate_scenes
 from backend.services.studio.models import Draft
 from backend.services.studio.titles import template_filters
 from backend.services.studio import title_art
-from backend.services.studio import audio
+from backend.services.studio import audio, store
 from backend.services.studio.store import directory
 from backend.services.studio.templates.spec import HTML_TEMPLATE_IDS, STYLE_IDS
 from backend.services import render_limits
@@ -229,9 +229,9 @@ def render_draft(project_id, video, draft: Draft, job_id, progress, *, brand_out
         hook = _translate_hook_and_cues(draft.language, hook, entries, warnings)
     font = resolve_cjk_font()
     if hook and draft.title_style not in title_art.STYLES and not font:
-        raise UserFacingError('缺少中文字体，无法烧录开头文字，请安装 Noto Sans CJK')
+        raise UserFacingError('Missing font to burn title text, please install Noto Sans font')
     if draft.subtitles and not entries and not packaged:
-        warnings.append('原素材没有可用字幕，本次未烧录字幕')
+        warnings.append('Original source has no usable subtitles, captions not burned')
     # Fail a spent model budget before starting encode; ffmpeg/HTML capture are local work.
     project_cancellation.checkpoint(project_id)
     from backend.core.job_budget import pause_clip_job_budget
@@ -352,27 +352,52 @@ def _encode_draft(
                         
                         audio_input_idx = 0
                         bgm_input_idx = None
+                        has_music_track = False
                         if keep_audio:
                             raw_dir = directory(project_id) / 'raw'
                             external_audio = next((raw_dir / f'audio_track{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'audio_track{ext}').is_file()), None)
                             bg_music = next((raw_dir / f'bg_music{ext}' for ext in ('.mp3', '.wav', '.m4a', '.aac', '.flac') if (raw_dir / f'bg_music{ext}').is_file()), None)
+                            has_music_track = bool(bg_music is not None)
+
+                            # Retrieve audio sync preferences if set
+                            proj_data = store.read(project_id) or {}
+                            proj_settings = proj_data.get('settings') or {}
+                            si_data = proj_settings.get('smart_import') or {}
+                            audio_sync_mode = proj_settings.get('audio_sync_mode') or si_data.get('audio_sync_mode') or 'highlight'
+                            audio_custom_start = float(proj_settings.get('audio_custom_start') or si_data.get('audio_custom_start') or 0.0)
+
                             curr_input = silence_input + 1
                             if external_audio:
-                                cmd += ['-ss', str(scene.start), '-i', str(external_audio)]
+                                ext_start = audio.find_audio_highlight_start(
+                                    external_audio, clip_duration=duration,
+                                    mode='sync' if audio_sync_mode == 'sync' else ('custom' if audio_sync_mode == 'custom' else 'start'),
+                                    custom_start=audio_custom_start, scene_start=scene.start
+                                )
+                                cmd += ['-ss', str(ext_start), '-i', str(external_audio)]
                                 audio_input_idx = curr_input
                                 curr_input += 1
                                 if bg_music:
-                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    bgm_start = audio.find_audio_highlight_start(
+                                        bg_music, clip_duration=duration,
+                                        mode=audio_sync_mode,
+                                        custom_start=audio_custom_start, scene_start=scene.start
+                                    )
+                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
                                     bgm_input_idx = curr_input
                                     curr_input += 1
                             elif bg_music:
+                                bgm_start = audio.find_audio_highlight_start(
+                                    bg_music, clip_duration=duration,
+                                    mode=audio_sync_mode,
+                                    custom_start=audio_custom_start, scene_start=scene.start
+                                )
                                 if audio.has_audio(video):
                                     audio_input_idx = 0
-                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
                                     bgm_input_idx = curr_input
                                     curr_input += 1
                                 else:
-                                    cmd += ['-ss', str(scene.start), '-i', str(bg_music)]
+                                    cmd += ['-ss', str(bgm_start), '-i', str(bg_music)]
                                     audio_input_idx = curr_input
                                     curr_input += 1
 
@@ -402,7 +427,7 @@ def _encode_draft(
                         else:
                             cmd += ['-map', '0:v:0']
                         if keep_audio:
-                            graph = ';'.join(filter(None, [graph, audio.cut_filters(silence_input, duration, audio_input=audio_input_idx, bgm_input=bgm_input_idx)]))
+                            graph = ';'.join(filter(None, [graph, audio.cut_filters(silence_input, duration, audio_input=audio_input_idx, bgm_input=bgm_input_idx, has_music=has_music_track)]))
                             cmd += ['-map', '[audioout]', '-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2']
                         else:
                             cmd += ['-an']
